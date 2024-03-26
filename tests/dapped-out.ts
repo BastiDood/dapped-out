@@ -1,33 +1,81 @@
-import { AnchorProvider, type Program, getProvider, setProvider, utils, web3, workspace } from '@coral-xyz/anchor';
+import { AnchorProvider, type Program, utils, web3, workspace } from '@coral-xyz/anchor';
 import { BN } from 'bn.js';
 import { DappedOut } from '../target/types/dapped_out';
 import { expect } from 'chai';
 
 describe('dapped-out', () => {
-    // Configure the client to use the local cluster.
-    setProvider(AnchorProvider.env());
-    const provider = getProvider();
+    const provider = AnchorProvider.env();
     const program: Program<DappedOut> = workspace.DappedOut;
 
-    it('should be initialized', async () => {
-        const [tournament, _] = web3.PublicKey.findProgramAddressSync(
-            [utils.bytes.utf8.encode('tournaments'), provider.publicKey.toBuffer()],
-            program.programId,
-        );
+    const [contestAddress, contestBump] = web3.PublicKey.findProgramAddressSync(
+        [utils.bytes.utf8.encode('contest'), provider.publicKey.toBuffer()],
+        program.programId,
+    );
 
+    it('should create a new contest', async () => {
+        // TODO: Test Balance
         await program.methods
-            .createTournament('Hello world!', new BN(10), new BN(1000), 8)
-            .accounts({ tournament, host: provider.publicKey, systemProgram: web3.SystemProgram.programId })
+            .createContest('Hello world!', new BN(10), new BN(1000))
+            .accounts({
+                contest: contestAddress,
+                wallet: provider.publicKey,
+                systemProgram: web3.SystemProgram.programId,
+            })
             .rpc();
 
-        const { name, limit, participants: [{ user, stake, delay }, ...rest] } = await program.account.tournament.fetch(tournament);
-
+        const { name, bump, participants: [first, ...rest] } = await program.account.contest.fetch(contestAddress);
         expect(name).eq('Hello world!');
-        expect(limit).eq(8);
+        expect(bump).eq(contestBump);
 
-        expect(user.equals(provider.publicKey)).true;
-        expect(stake.toNumber()).eq(10);
-        expect(delay.toNumber()).eq(1000);
-        expect(rest).length(0);
+        expect(first?.authority.equals(provider.publicKey)).true;
+        expect(first?.stake.eq(new BN(10))).true;
+        expect(first?.delay.eq(new BN(1000))).true;
+        expect(rest).empty;
+    });
+
+    const dummy = web3.Keypair.generate();
+    it('should join an existing contest', async () => {
+        // TODO: Test Balance
+        await program.methods
+            .joinContest(new BN(0), new BN(995))
+            .accounts({
+                contest: contestAddress,
+                wallet: dummy.publicKey,
+                author: provider.publicKey,
+            })
+            .signers([dummy])
+            .rpc();
+
+        const { name, bump, participants: [first, second, ...rest] } = await program.account.contest.fetch(contestAddress);
+        expect(name).eq('Hello world!');
+        expect(bump).eq(contestBump);
+
+        expect(first?.authority.equals(provider.publicKey)).true;
+        expect(first?.stake.eq(new BN(10))).true;
+        expect(first?.delay.eq(new BN(1000))).true;
+
+        expect(second?.authority.equals(dummy.publicKey)).true;
+        expect(second?.stake.eq(new BN(0))).true;
+        expect(second?.delay.eq(new BN(995))).true;
+
+        expect(rest).empty;
+        // TODO: Assert balance
+    });
+
+    it('should close an existing contest', async () => {
+        // TODO: Test Balance
+        await program.methods
+            .closeContest()
+            .accounts({
+                contest: contestAddress,
+                wallet: provider.publicKey,
+                systemProgram: web3.SystemProgram.programId,
+            })
+            .rpc();
+
+        const info = await program.account.contest.getAccountInfo(contestAddress);
+        expect(info).null;
+
+        // TODO: Assert balance
     });
 });
