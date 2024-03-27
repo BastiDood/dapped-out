@@ -42,4 +42,22 @@ mod dapped_out {
         let cpi = CpiContext::new(token_program.to_account_info(), accounts);
         transfer_checked(cpi, stake, mint.decimals)
     }
+
+    pub fn join_contest(ctx: Context<JoinContest>, _slug: String, stake: u64, delay: u64) -> Result<()> {
+        let Context { accounts: JoinContest { wallet, mint, contest, src, dst, token_program, .. }, .. } = ctx;
+
+        // Add a new participant to the contest
+        contest.participants.push(Participant { token: src.key(), stake, delay });
+
+        // Transfer the stake to the contest token account
+        use anchor_spl::token::{transfer_checked, TransferChecked};
+        let accounts = TransferChecked {
+            mint: mint.to_account_info(),
+            from: src.to_account_info(),
+            to: dst.to_account_info(),
+            authority: wallet.to_account_info(),
+        };
+        let cpi = CpiContext::new(token_program.to_account_info(), accounts);
+        transfer_checked(cpi, stake, mint.decimals)
+    }
 }
