@@ -3,7 +3,7 @@ mod model;
 
 use anchor_lang::prelude::*;
 use inst::*;
-use model::Participant;
+use model::*;
 
 declare_id!("89si6S2bCwct7sqLE5ihvrJPtV3jYuE6HBa4Q2MoATtM");
 
@@ -11,37 +11,34 @@ declare_id!("89si6S2bCwct7sqLE5ihvrJPtV3jYuE6HBa4Q2MoATtM");
 mod dapped_out {
     use super::*;
 
-    pub fn create_contest(ctx: Context<CreateContest>, name: String, stake: u64, delay: i64) -> Result<()> {
-        let Context { accounts: CreateContest { wallet, contest, system_program }, bumps, .. } = ctx;
+    pub fn create_casino(ctx: Context<CreateCasino>, name: String) -> Result<()> {
+        let Context { accounts: CreateCasino { wallet, mint, casino, .. }, bumps, .. } = ctx;
+        casino.authority = wallet.key();
+        casino.mint = mint.key();
+        casino.name = name;
+        casino.casino_bump = bumps.casino;
+        casino.token_bump = bumps.token;
+        Ok(())
+    }
 
-        // Initialize tournament details
+    pub fn create_contest(ctx: Context<CreateContest>, name: String, stake: u64, delay: u64) -> Result<()> {
+        let Context { accounts: CreateContest { wallet, mint, contest, src, dst, token_program, .. }, bumps, .. } = ctx;
+
+        // Initialize the contest data
         contest.name = name;
         contest.bump = bumps.contest;
+        contest.participants.clear();
+        contest.participants.push(Participant { token: src.key(), stake, delay });
 
-        // Initialize first participant
-        contest.participants.push(Participant { authority: wallet.key(), stake, delay });
-
-        // Stake the coins into the contest
-        use anchor_lang::system_program::{transfer, Transfer};
-        let args = Transfer { from: wallet.to_account_info(), to: contest.to_account_info() };
-        let cpi = CpiContext::new(system_program.to_account_info(), args);
-        transfer(cpi, stake)
-    }
-
-    pub fn join_contest(ctx: Context<JoinContest>, stake: u64, delay: i64) -> Result<()> {
-        let Context { accounts: JoinContest { wallet, contest, system_program, .. }, .. } = ctx;
-
-        // Add the user to the participants
-        contest.participants.push(Participant { authority: wallet.key(), stake, delay });
-
-        // Stake the coins into the contest
-        use anchor_lang::system_program::{transfer, Transfer};
-        let args = Transfer { from: wallet.to_account_info(), to: contest.to_account_info() };
-        let cpi = CpiContext::new(system_program.to_account_info(), args);
-        transfer(cpi, stake)
-    }
-
-    pub fn close_contest(_ctx: Context<CloseContest>) -> Result<()> {
-        Ok(())
+        // Transfer the stake to the casino
+        use anchor_spl::token::{transfer_checked, TransferChecked};
+        let accounts = TransferChecked {
+            mint: mint.to_account_info(),
+            from: src.to_account_info(),
+            to: dst.to_account_info(),
+            authority: wallet.to_account_info(),
+        };
+        let cpi = CpiContext::new(token_program.to_account_info(), accounts);
+        transfer_checked(cpi, stake, mint.decimals)
     }
 }
