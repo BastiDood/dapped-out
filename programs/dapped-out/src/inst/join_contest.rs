@@ -6,7 +6,9 @@ use anchor_spl::token::{Mint, Token, TokenAccount};
 #[instruction(slug: String)]
 pub struct JoinContest<'info> {
     pub wallet: Signer<'info>,
+    /// CHECK: Only used for validation of passed accounts.
     pub admin: AccountInfo<'info>,
+    #[account(address = contest.mint)]
     pub mint: Account<'info, Mint>,
     #[account(
         mut,
@@ -16,7 +18,6 @@ pub struct JoinContest<'info> {
     pub src: Account<'info, TokenAccount>,
     #[account(
         mut,
-        address = contest.participants[0].token.key(),
         seeds = [TokenAccount::PREFIX, admin.key().as_ref(), slug.as_bytes()],
         bump = contest.token_bump,
         token::mint = mint,
