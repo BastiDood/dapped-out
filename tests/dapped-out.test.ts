@@ -1,7 +1,7 @@
 import { AnchorProvider, BN, type Program, utils, web3, workspace } from '@coral-xyz/anchor';
-import { DappedOut } from '../target/types/dapped_out';
 import { createAssociatedTokenAccountInstruction, createMintToCheckedInstruction } from '@solana/spl-token';
-import { expect } from 'chai';
+import { describe, expect, it } from 'vitest';
+import type { DappedOut } from '../target/types/dapped_out';
 
 describe('dapped-out', () => {
     const provider = AnchorProvider.env();
