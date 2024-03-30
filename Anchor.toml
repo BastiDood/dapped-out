@@ -12,10 +12,10 @@ url = "https://api.apr.dev"
 
 [provider]
 cluster = "Localnet"
-wallet = "/home/basti/.config/solana/id.json"
+wallet = "~/.config/solana/id.json"
 
 [scripts]
-test = "yarn run vitest run"
+test = "pnpm vitest run"
 
 [test]
 startup_wait = 15000
