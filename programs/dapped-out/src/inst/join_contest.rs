@@ -1,17 +1,22 @@
-use crate::model::{Contest, Prefixable};
+use crate::model::{Contest, Prefixable as _};
 use anchor_lang::prelude::*;
-use anchor_spl::token::{Mint, Token, TokenAccount};
+use anchor_spl::{
+    associated_token::AssociatedToken,
+    token::{Mint, Token, TokenAccount},
+};
 
 #[derive(Accounts)]
 #[instruction(slug: String)]
 pub struct JoinContest<'info> {
+    #[account(mut)]
     pub wallet: Signer<'info>,
     /// CHECK: Only used for validation of passed accounts.
     pub admin: AccountInfo<'info>,
     #[account(address = contest.mint)]
     pub mint: Account<'info, Mint>,
     #[account(
-        mut,
+        init_if_needed,
+        payer = wallet,
         associated_token::mint = mint,
         associated_token::authority = wallet,
     )]
@@ -32,7 +37,9 @@ pub struct JoinContest<'info> {
         bump = contest.contest_bump,
     )]
     pub contest: Account<'info, Contest>,
+    pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
 #[error_code]

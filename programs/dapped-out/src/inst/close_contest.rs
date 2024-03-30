@@ -1,4 +1,4 @@
-use crate::model::{Archive, Contest, Prefixable};
+use crate::model::{Archive, Contest, Prefixable as _};
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token, TokenAccount};
 

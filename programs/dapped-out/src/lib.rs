@@ -12,6 +12,10 @@ declare_id!("89si6S2bCwct7sqLE5ihvrJPtV3jYuE6HBa4Q2MoATtM");
 mod dapped_out {
     use super::*;
 
+    pub fn create_mint(_ctx: Context<CreateMint>) -> Result<()> {
+        Ok(())
+    }
+
     pub fn create_contest(
         ctx: Context<CreateContest>,
         slug: String,

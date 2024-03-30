@@ -1,8 +1,12 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::TokenAccount;
+use anchor_spl::token::{TokenAccount, Mint};
 
 pub trait Prefixable {
     const PREFIX: &'static [u8];
+}
+
+impl Prefixable for Mint {
+    const PREFIX: &'static [u8] = b"mint";
 }
 
 impl Prefixable for TokenAccount {
