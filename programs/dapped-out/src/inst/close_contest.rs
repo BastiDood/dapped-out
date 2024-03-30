@@ -15,7 +15,6 @@ pub struct CloseContest<'info> {
         bump = contest.token_bump,
         token::mint = mint,
         token::authority = wallet,
-        close = wallet,
     )]
     pub token: Account<'info, TokenAccount>,
     #[account(

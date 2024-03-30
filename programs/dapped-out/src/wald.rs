@@ -4,8 +4,6 @@
 pub struct Wald {
     /// The cached mean of the distribution.
     mean: f64,
-    /// The precomputed ratio for scaling the distribution.
-    scale: f64,
     /// The precomputed ratio of the inner radical.
     sqrt_ratio: f64,
     /// The precomputed ratio of the inner exponential.
@@ -13,30 +11,16 @@ pub struct Wald {
 }
 
 impl Wald {
-    pub fn new(pot: f64, mode: f64, offset: f64) -> Self {
+    pub fn new(mode: f64, offset: f64) -> Self {
         let mean = mode + offset;
         let ratio = mode / mean;
         let denom = (1. + ratio) * (1. - ratio);
-
-        let a_exp_ratio = {
-            let denom = 2. * mean.powi(2) * denom;
-            3. * offset.powi(2) / denom
-        };
-        let a_sqrt_ratio = {
-            let denom = core::f64::consts::TAU * mode.powi(2) * denom;
-            3. / denom
-        };
-        let scale = pot * a_exp_ratio.exp() / a_sqrt_ratio.sqrt();
 
         let lambda = 3. * mode / denom;
         let sqrt_ratio = lambda / core::f64::consts::TAU;
         let exp_ratio = lambda / (2. * mean.powi(2));
 
-        Self { mean, scale, sqrt_ratio, exp_ratio }
-    }
-
-    pub const fn scale(&self) -> f64 {
-        self.scale
+        Self { mean, sqrt_ratio, exp_ratio }
     }
 
     pub fn sample(self, x: f64) -> f64 {

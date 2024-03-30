@@ -1,81 +1,194 @@
-import { AnchorProvider, type Program, utils, web3, workspace } from '@coral-xyz/anchor';
-import { BN } from 'bn.js';
+import { AnchorProvider, BN, type Program, utils, web3, workspace } from '@coral-xyz/anchor';
 import { DappedOut } from '../target/types/dapped_out';
+import { createAssociatedTokenAccountInstruction, createMintToCheckedInstruction } from '@solana/spl-token';
 import { expect } from 'chai';
 
 describe('dapped-out', () => {
     const provider = AnchorProvider.env();
     const program: Program<DappedOut> = workspace.DappedOut;
+    const seeds = [provider.publicKey.toBuffer(), utils.bytes.utf8.encode('test')];
 
-    const [contestAddress, contestBump] = web3.PublicKey.findProgramAddressSync(
-        [utils.bytes.utf8.encode('contest'), provider.publicKey.toBuffer()],
+    const [contestAddress, _contestBump] = web3.PublicKey.findProgramAddressSync(
+        [utils.bytes.utf8.encode('contest'), ...seeds],
         program.programId,
     );
 
-    it('should create a new contest', async () => {
-        // TODO: Test Balance
+    const [archiveAddress, _archiveBump] = web3.PublicKey.findProgramAddressSync(
+        [utils.bytes.utf8.encode('archive'), ...seeds],
+        program.programId,
+    );
+
+    const [programTokenAccountAddress, _tokenAccountBump] = web3.PublicKey.findProgramAddressSync(
+        [utils.bytes.utf8.encode('token'), ...seeds],
+        program.programId,
+    );
+
+    const [mintAddress, _mintBump] = web3.PublicKey.findProgramAddressSync(
+        [utils.bytes.utf8.encode('mint'), provider.publicKey.toBuffer()],
+        program.programId,
+    );
+
+    const selfTokenAccountAddress = utils.token.associatedAddress({
+        mint: mintAddress,
+        owner: provider.publicKey,
+    });
+
+    it('should create a new mint account', async () => {
         await program.methods
-            .createContest('Hello world!', new BN(10), new BN(1000))
+            .createMint()
             .accounts({
-                contest: contestAddress,
                 wallet: provider.publicKey,
+                mint: mintAddress,
+                token: selfTokenAccountAddress,
                 systemProgram: web3.SystemProgram.programId,
+                tokenProgram: utils.token.TOKEN_PROGRAM_ID,
+                associatedTokenProgram: utils.token.ASSOCIATED_PROGRAM_ID,
             })
             .rpc();
+    });
 
-        const { name, bump, participants: [first, ...rest] } = await program.account.contest.fetch(contestAddress);
-        expect(name).eq('Hello world!');
-        expect(bump).eq(contestBump);
+    it('should mint balance into the admin token account', async () => {
+        const inst = createMintToCheckedInstruction(mintAddress, selfTokenAccountAddress, provider.publicKey, 10000, 0);
+        await provider.sendAndConfirm(new web3.Transaction().add(inst));
+        const balance = await provider.connection.getTokenAccountBalance(selfTokenAccountAddress);
+        expect(balance.value.uiAmount).eq(10000);
+        const supply = await provider.connection.getTokenSupply(mintAddress);
+        expect(supply.value.uiAmount).eq(10000);
+    });
 
-        expect(first?.authority.equals(provider.publicKey)).true;
-        expect(first?.stake.eq(new BN(10))).true;
-        expect(first?.delay.eq(new BN(1000))).true;
+    it('should create a new contest', async () => {
+        await program.methods
+            .createContest('test', 'Test', new BN(10), new BN(200), 20)
+            .accounts({
+                wallet: provider.publicKey,
+                mint: mintAddress,
+                src: selfTokenAccountAddress,
+                dst: programTokenAccountAddress,
+                contest: contestAddress,
+                systemProgram: web3.SystemProgram.programId,
+                tokenProgram: utils.token.TOKEN_PROGRAM_ID,
+            })
+            .rpc();
+        const { slug, name, stake, mint, offset, participants: [host, ...rest] } = await program.account.contest.fetch(contestAddress);
+        expect(slug).eq('test');
+        expect(name).eq('Test');
+        expect(mint.equals(mintAddress)).true;
+        expect(stake.eqn(10)).true;
+        expect(offset).eq(20);
+        expect(host?.token.equals(selfTokenAccountAddress)).true;
+        expect(host?.delay.eqn(200)).true;
         expect(rest).empty;
     });
 
-    const dummy = web3.Keypair.generate();
-    it('should join an existing contest', async () => {
-        // TODO: Test Balance
+    it('should have caused the host balance to decrease due to contest creation', async () => {
+        const ctx = await provider.connection.getTokenAccountBalance(selfTokenAccountAddress);
+        expect(ctx.value.decimals).eq(0);
+        expect(ctx.value.uiAmount).eq(9990);
+    });
+
+    it('should have caused the program balance to increase due to contest creation', async () => {
+        const ctx = await provider.connection.getTokenAccountBalance(programTokenAccountAddress);
+        expect(ctx.value.decimals).eq(0);
+        expect(ctx.value.uiAmount).eq(10);
+    });
+
+    const other = web3.Keypair.generate();
+    const otherTokenAccountAddress = utils.token.associatedAddress({
+        mint: mintAddress,
+        owner: other.publicKey,
+    });
+
+    it('should airdrop to a new second account with rent exemption', async () => {
+        const rent = await provider.connection.getMinimumBalanceForRentExemption(0);
+        const tx = await provider.connection.requestAirdrop(other.publicKey, rent + 10000);
+        const ctx = await provider.connection.confirmTransaction(tx);
+        expect(ctx.value.err).null;
+    });
+
+    it('should initialize a new associated token account for the user', async () => {
+        const inst = createAssociatedTokenAccountInstruction(provider.publicKey, otherTokenAccountAddress, other.publicKey, mintAddress);
+        await provider.sendAndConfirm(new web3.Transaction().add(inst));
+        const balance = await provider.connection.getTokenAccountBalance(otherTokenAccountAddress);
+        expect(balance.value.uiAmount).eq(0);
+    });
+
+    it('should mint balance into the user token account', async () => {
+        const inst = createMintToCheckedInstruction(mintAddress, otherTokenAccountAddress, provider.publicKey, 5000, 0);
+        await provider.sendAndConfirm(new web3.Transaction().add(inst));
+        const balance = await provider.connection.getTokenAccountBalance(otherTokenAccountAddress);
+        expect(balance.value.uiAmount).eq(5000);
+        const supply = await provider.connection.getTokenSupply(mintAddress);
+        expect(supply.value.uiAmount).eq(15000);
+    });
+
+    it('should join an existing contest with perfect accuracy', async () => {
         await program.methods
-            .joinContest(new BN(0), new BN(995))
+            .joinContest('test', new BN(200))
             .accounts({
+                wallet: other.publicKey,
+                admin: provider.publicKey,
+                mint: mintAddress,
+                src: otherTokenAccountAddress,
+                dst: programTokenAccountAddress,
                 contest: contestAddress,
-                wallet: dummy.publicKey,
-                author: provider.publicKey,
+                systemProgram: web3.SystemProgram.programId,
+                tokenProgram: utils.token.TOKEN_PROGRAM_ID,
+                associatedTokenProgram: utils.token.ASSOCIATED_PROGRAM_ID,
             })
-            .signers([dummy])
+            .signers([other])
             .rpc();
-
-        const { name, bump, participants: [first, second, ...rest] } = await program.account.contest.fetch(contestAddress);
-        expect(name).eq('Hello world!');
-        expect(bump).eq(contestBump);
-
-        expect(first?.authority.equals(provider.publicKey)).true;
-        expect(first?.stake.eq(new BN(10))).true;
-        expect(first?.delay.eq(new BN(1000))).true;
-
-        expect(second?.authority.equals(dummy.publicKey)).true;
-        expect(second?.stake.eq(new BN(0))).true;
-        expect(second?.delay.eq(new BN(995))).true;
-
+        const { slug, name, stake, mint, offset, participants: [host, user, ...rest] } = await program.account.contest.fetch(contestAddress);
+        expect(slug).eq('test');
+        expect(name).eq('Test');
+        expect(mint.equals(mintAddress)).true;
+        expect(stake.eqn(10)).true;
+        expect(offset).eq(20);
+        expect(host?.token.equals(selfTokenAccountAddress)).true;
+        expect(host?.delay.eqn(200)).true;
+        expect(user?.token.equals(otherTokenAccountAddress)).true;
+        expect(user?.delay.eqn(200)).true;
         expect(rest).empty;
-        // TODO: Assert balance
+    });
+
+    it('should have caused the user balance to decrease due to contest join', async () => {
+        const ctx = await provider.connection.getTokenAccountBalance(otherTokenAccountAddress);
+        expect(ctx.value.decimals).eq(0);
+        expect(ctx.value.uiAmount).eq(4990);
+    });
+
+    it('should have caused the program balance to increase due to contest join', async () => {
+        const ctx = await provider.connection.getTokenAccountBalance(programTokenAccountAddress);
+        expect(ctx.value.decimals).eq(0);
+        expect(ctx.value.uiAmount).eq(20);
     });
 
     it('should close an existing contest', async () => {
-        // TODO: Test Balance
         await program.methods
-            .closeContest()
+            .closeContest('test')
             .accounts({
-                contest: contestAddress,
                 wallet: provider.publicKey,
+                mint: mintAddress,
+                token: programTokenAccountAddress,
+                contest: contestAddress,
+                archive: archiveAddress,
                 systemProgram: web3.SystemProgram.programId,
+                tokenProgram: utils.token.TOKEN_PROGRAM_ID,
             })
+            .remainingAccounts([
+                { pubkey: selfTokenAccountAddress, isSigner: false, isWritable: true },
+                { pubkey: otherTokenAccountAddress, isSigner: false, isWritable: true },
+            ])
             .rpc();
-
-        const info = await program.account.contest.getAccountInfo(contestAddress);
+        const contest = await program.account.contest.fetchNullable(contestAddress);
+        expect(contest).null;
+        const info = await provider.connection.getAccountInfo(programTokenAccountAddress);
         expect(info).null;
-
-        // TODO: Assert balance
+        // FIXME: Make sure that the `self` has at least some balance in return.
+        const selfBalance = await provider.connection.getTokenAccountBalance(selfTokenAccountAddress);
+        expect(selfBalance.value.decimals).eq(0);
+        expect(selfBalance.value.uiAmount).eq(9990);
+        const otherBalance = await provider.connection.getTokenAccountBalance(otherTokenAccountAddress);
+        expect(otherBalance.value.decimals).eq(0);
+        expect(otherBalance.value.uiAmount).eq(5010);
     });
 });

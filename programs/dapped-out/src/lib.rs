@@ -70,6 +70,7 @@ mod dapped_out {
     }
 
     pub fn close_contest<'info>(ctx: Context<'_, '_, '_, 'info, CloseContest<'info>>, _slug: String) -> Result<()> {
+        use anchor_spl::token::{transfer_checked, TransferChecked};
         let Context {
             accounts: CloseContest { wallet, mint, token, contest, archive, token_program, .. },
             bumps,
@@ -91,7 +92,7 @@ mod dapped_out {
             return Err(CloseError::TooLarge.into());
         };
 
-        let wald = wald::Wald::new(pot.into(), mode.into(), contest.offset);
+        let wald = wald::Wald::new(mode.into(), contest.offset);
         let contestants: Vec<_> = iter
             .map(|(&Participant { token, delay }, account)| {
                 require_keys_eq!(token, account.key(), CloseError::AccountMismatch);
@@ -104,22 +105,19 @@ mod dapped_out {
 
         // Normalize the weights of the contests
         let total = contestants.iter().map(|&(_, wald)| wald).sum::<f64>();
-        let scale = wald.scale();
         for (account, sample) in contestants {
             // Check if the reward can be casted to an integer
-            let reward = sample / total * scale;
+            let reward = sample / total * f64::from(pot);
             require!(reward.is_finite(), CloseError::BadTransfer);
             require_gt!(reward, 0., CloseError::BadTransfer);
             require!(reward <= f64::from(u32::MAX), CloseError::BadTransfer);
             let reward = unsafe { reward.to_int_unchecked() };
 
-            // Perform the transfer
-            use anchor_spl::token::{transfer_checked, TransferChecked};
             let args = TransferChecked {
                 mint: mint.to_account_info(),
                 authority: wallet.to_account_info(),
                 from: token.to_account_info(),
-                to: account.to_account_info(),
+                to: account.clone(),
             };
             let cpi = CpiContext::new(token_program.to_account_info(), args);
             transfer_checked(cpi, reward, mint.decimals)?;
