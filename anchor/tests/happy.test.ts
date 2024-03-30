@@ -69,15 +69,22 @@ describe('dapped-out', () => {
                 tokenProgram: utils.token.TOKEN_PROGRAM_ID,
             })
             .rpc();
-        const { slug, name, stake, mint, offset, participants: [host, ...rest] } = await program.account.contest.fetch(contestAddress);
+        const {
+            slug,
+            name,
+            stake,
+            mint,
+            offset,
+            participants: [host, ...rest],
+        } = await program.account.contest.fetch(contestAddress);
         expect(slug).eq('test');
         expect(name).eq('Test');
-        expect(mint.equals(mintAddress)).true;
-        expect(stake.eqn(10)).true;
+        expect(mint.equals(mintAddress)).toBeTruthy();
+        expect(stake.eqn(10)).toBeTruthy();
         expect(offset).eq(20);
-        expect(host?.token.equals(selfTokenAccountAddress)).true;
-        expect(host?.delay.eqn(200)).true;
-        expect(rest).empty;
+        expect(host?.token.equals(selfTokenAccountAddress)).toBeTruthy();
+        expect(host?.delay.eqn(200)).toBeTruthy();
+        expect(rest).toHaveLength(0);
     });
 
     it('should have caused the host balance to decrease due to contest creation', async () => {
@@ -102,11 +109,16 @@ describe('dapped-out', () => {
         const rent = await provider.connection.getMinimumBalanceForRentExemption(0);
         const tx = await provider.connection.requestAirdrop(other.publicKey, rent + 10000);
         const ctx = await provider.connection.confirmTransaction(tx);
-        expect(ctx.value.err).null;
+        expect(ctx.value.err).toBeNull();
     });
 
     it('should initialize a new associated token account for the user', async () => {
-        const inst = createAssociatedTokenAccountInstruction(provider.publicKey, otherTokenAccountAddress, other.publicKey, mintAddress);
+        const inst = createAssociatedTokenAccountInstruction(
+            provider.publicKey,
+            otherTokenAccountAddress,
+            other.publicKey,
+            mintAddress,
+        );
         await provider.sendAndConfirm(new web3.Transaction().add(inst));
         const balance = await provider.connection.getTokenAccountBalance(otherTokenAccountAddress);
         expect(balance.value.uiAmount).eq(0);
@@ -137,17 +149,24 @@ describe('dapped-out', () => {
             })
             .signers([other])
             .rpc();
-        const { slug, name, stake, mint, offset, participants: [host, user, ...rest] } = await program.account.contest.fetch(contestAddress);
+        const {
+            slug,
+            name,
+            stake,
+            mint,
+            offset,
+            participants: [host, user, ...rest],
+        } = await program.account.contest.fetch(contestAddress);
         expect(slug).eq('test');
         expect(name).eq('Test');
-        expect(mint.equals(mintAddress)).true;
-        expect(stake.eqn(10)).true;
+        expect(mint.equals(mintAddress)).toBeTruthy();
+        expect(stake.eqn(10)).toBeTruthy();
         expect(offset).eq(20);
-        expect(host?.token.equals(selfTokenAccountAddress)).true;
-        expect(host?.delay.eqn(200)).true;
-        expect(user?.token.equals(otherTokenAccountAddress)).true;
-        expect(user?.delay.eqn(200)).true;
-        expect(rest).empty;
+        expect(host?.token.equals(selfTokenAccountAddress)).toBeTruthy();
+        expect(host?.delay.eqn(200)).toBeTruthy();
+        expect(user?.token.equals(otherTokenAccountAddress)).toBeTruthy();
+        expect(user?.delay.eqn(200)).toBeTruthy();
+        expect(rest).toBeTruthy();
     });
 
     it('should have caused the user balance to decrease due to contest join', async () => {
@@ -180,9 +199,9 @@ describe('dapped-out', () => {
             ])
             .rpc();
         const contest = await program.account.contest.fetchNullable(contestAddress);
-        expect(contest).null;
+        expect(contest).toBeNull();
         const info = await provider.connection.getAccountInfo(programTokenAccountAddress);
-        expect(info).null;
+        expect(info).toBeNull();
         // FIXME: Make sure that the `self` has at least some balance in return.
         const selfBalance = await provider.connection.getTokenAccountBalance(selfTokenAccountAddress);
         expect(selfBalance.value.decimals).eq(0);

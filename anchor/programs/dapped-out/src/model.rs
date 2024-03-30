@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{TokenAccount, Mint};
+use anchor_spl::token::{Mint, TokenAccount};
 
 pub trait Prefixable {
     const PREFIX: &'static [u8];

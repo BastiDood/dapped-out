@@ -1,14 +1,5 @@
 {
+    "name": "dapped-out",
     "type": "module",
-    "packageManager": "pnpm@8.15.5",
-    "scripts": { "test": "anchor test" },
-    "devDependencies": {
-        "@coral-xyz/anchor": "^0.29.0",
-        "@solana/spl-token": "^0.4.3",
-        "@types/bn.js": "^5.1.0",
-        "prettier": "^3.2.5",
-        "typescript": "^5.4.3",
-        "vite": "^5.2.7",
-        "vitest": "^1.4.0"
-    }
+    "packageManager": "pnpm@8.15.5"
 }

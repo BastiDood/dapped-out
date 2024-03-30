@@ -1,0 +1,22 @@
+{
+    "name": "dapped-solana",
+    "type": "module",
+    "scripts": {
+        "build": "anchor build",
+        "test": "anchor test",
+        "lint:js": "eslint **/*.{js,svelte,ts}",
+        "fmt": "prettier .",
+        "fmt:fix": "prettier --write ."
+    },
+    "devDependencies": {
+        "@coral-xyz/anchor": "^0.29.0",
+        "@solana/spl-token": "^0.4.3",
+        "@types/bn.js": "^5.1.5",
+        "@typescript-eslint/eslint-plugin": "^7.4.0",
+        "@typescript-eslint/parser": "^7.4.0",
+        "eslint": "^8.57.0",
+        "eslint-config-prettier": "^9.1.0",
+        "vite": "^5.2.7",
+        "vitest": "^1.4.0"
+    }
+}
