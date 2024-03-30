@@ -11,7 +11,7 @@ dapped_out = "89si6S2bCwct7sqLE5ihvrJPtV3jYuE6HBa4Q2MoATtM"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "Localnet"
+cluster = "localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
