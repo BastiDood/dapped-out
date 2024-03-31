@@ -8,7 +8,6 @@ import { readable } from 'svelte/store';
 import { PUBLIC_SOLANA_RPC } from '$lib/env';
 
 const WALLET = Symbol('wallet');
-const CONNECTION = new web3.Connection(PUBLIC_SOLANA_RPC);
 
 export const enum Status {
     /** Default state while confirming the wallet. */
@@ -50,6 +49,7 @@ function create() {
     const signTransaction = phantom.signTransaction.bind(phantom);
     const signAllTransactions = phantom.signAllTransactions.bind(phantom);
 
+    const CONNECTION = new web3.Connection(PUBLIC_SOLANA_RPC);
     const { subscribe } = readable(Status.None as Dapped | Status, set => {
         // eslint-disable-next-line func-style
         const onConnect = () => {
