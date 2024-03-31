@@ -29,13 +29,10 @@
         "@sveltejs/kit": "^2.5.5",
         "@sveltejs/vite-plugin-svelte": "^3.0.2",
         "@tailwindcss/typography": "^0.5.12",
-        "@types/bn.js": "^5.1.5",
         "@types/web-app-manifest": "^1.0.8",
         "@typescript-eslint/eslint-plugin": "^7.4.0",
         "@typescript-eslint/parser": "^7.4.0",
         "autoprefixer": "^10.4.19",
-        "bn.js": "^5.2.1",
-        "buffer": "^6.0.3",
         "concurrently": "^8.2.2",
         "eslint": "^8.57.0",
         "eslint-config-prettier": "^9.1.0",
@@ -53,6 +50,7 @@
         "terser": "^5.30.0",
         "typescript": "^5.4.3",
         "vite": "^5.2.7",
+        "vite-plugin-node-polyfills": "^0.21.0",
         "vite-plugin-tailwind-purgecss": "^0.2.0"
     }
 }

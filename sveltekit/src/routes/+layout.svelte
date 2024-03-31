@@ -1,6 +1,5 @@
 <script>
     import './app.css';
-    import '$lib/buffer';
     import { AppShell, Toast, initializeStores, setInitialClassState } from '@skeletonlabs/skeleton';
     import { get, init } from '$lib/wallet';
     import SideBar from './SideBar.svelte';

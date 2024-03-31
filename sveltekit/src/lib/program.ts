@@ -1,6 +1,5 @@
-import { type AnchorProvider, Program, utils, web3 } from '@coral-xyz/anchor';
+import { type AnchorProvider, type BN, Program, utils, web3 } from '@coral-xyz/anchor';
 import { type DappedOut, IDL } from '../../../anchor/target/types/dapped_out';
-import BN from 'bn.js';
 import { createMintToCheckedInstruction } from '@solana/spl-token';
 
 import { PUBLIC_DAPPED_ADDRESS } from '$lib/env';
