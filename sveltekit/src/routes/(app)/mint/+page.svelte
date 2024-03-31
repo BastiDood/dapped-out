@@ -1,8 +1,8 @@
 <script lang="ts">
     import { ProgressBar, getToastStore } from '@skeletonlabs/skeleton';
     import { Status, get } from '$lib/wallet';
+    import CreateMint from './CreateMint.svelte';
     import { Icon } from '@steeze-ui/svelte-icon';
-    import ListContests from './ListContests.svelte';
     import { Wallet } from '@steeze-ui/heroicons';
 
     import ErrorAlert from '$lib/alerts/Error.svelte';
@@ -45,5 +45,5 @@
         >.</WarningAlert
     >
 {:else}
-    <ListContests program={$anchor} />
+    <CreateMint program={$anchor} />
 {/if}
