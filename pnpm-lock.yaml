@@ -58,6 +58,9 @@ importers:
       '@skeletonlabs/tw-plugin':
         specifier: ^0.3.1
         version: 0.3.1(tailwindcss@3.4.3)
+      '@solana/spl-token':
+        specifier: ^0.4.3
+        version: 0.4.3(@solana/web3.js@1.91.2)(fastestsmallesttextencoderdecoder@1.0.22)
       '@solana/wallet-adapter-base':
         specifier: ^0.9.23
         version: 0.9.23(@solana/web3.js@1.91.2)
@@ -91,6 +94,9 @@ importers:
       autoprefixer:
         specifier: ^10.4.19
         version: 10.4.19(postcss@8.4.38)
+      buffer:
+        specifier: ^6.0.3
+        version: 6.0.3
       concurrently:
         specifier: ^8.2.2
         version: 8.2.2
