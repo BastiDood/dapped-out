@@ -1,6 +1,8 @@
 <script lang="ts">
     import { Status, get } from '$lib/wallet';
     import { Icon } from '@steeze-ui/svelte-icon';
+    import ListContests from './ListContests.svelte';
+    import { ProgressBar } from '@skeletonlabs/skeleton';
     import { Wallet } from '@steeze-ui/heroicons';
     import { getToastStore } from '@skeletonlabs/skeleton';
 
@@ -23,7 +25,9 @@
     }
 </script>
 
-{#if $anchor === Status.Idle}
+{#if $anchor === Status.None}
+    <ProgressBar />
+{:else if $anchor === Status.Idle}
     <button type="button" class="variant-filled-primary btn" on:click={({ currentTarget }) => connect(currentTarget)}>
         <Icon src={Wallet} theme="mini" class="size-8" />
         <span>Connect Your Wallet</span>
@@ -42,5 +46,5 @@
         >.</WarningAlert
     >
 {:else}
-    <p>Connected!</p>
+    <ListContests program={$anchor} />
 {/if}

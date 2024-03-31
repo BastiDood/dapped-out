@@ -1,15 +1,18 @@
-import { AnchorProvider, web3 } from '@coral-xyz/anchor';
+import { AnchorProvider, Program, web3 } from '@coral-xyz/anchor';
+import { type DappedOut, IDL } from '../../../anchor/target/types/dapped_out';
 import { getContext, hasContext, setContext } from 'svelte';
 import { assert } from '$lib/assert';
 import { browser } from '$app/environment';
 import { readable } from 'svelte/store';
 
-import { PUBLIC_SOLANA_RPC } from '$lib/env';
+import { PUBLIC_DAPPED_ADDRESS, PUBLIC_SOLANA_RPC } from '$lib/env';
 
 const WALLET = Symbol('wallet');
 const CONNECTION = new web3.Connection(PUBLIC_SOLANA_RPC);
 
 export const enum Status {
+    /** Default state while confirming the wallet. */
+    None,
     /** Idle, reject, or disconnected wallet. */
     Idle,
     /** No Solana wallets available. */
@@ -29,7 +32,7 @@ function getPhantom() {
         if (typeof phantom === 'undefined') return Status.Unavailable;
         return phantom.isPhantom === true ? phantom : Status.Unsupported;
     }
-    return Status.Unavailable;
+    return Status.None;
 }
 
 function create() {
@@ -47,7 +50,7 @@ function create() {
     const signTransaction = phantom.signTransaction.bind(phantom);
     const signAllTransactions = phantom.signAllTransactions.bind(phantom);
 
-    const { subscribe } = readable(Status.Idle as AnchorProvider | Status, set => {
+    const { subscribe } = readable(Status.None as Program<DappedOut> | Status, set => {
         // eslint-disable-next-line func-style
         const onConnect = () => {
             const bytes = phantom.publicKey?.toBytes();
@@ -58,7 +61,8 @@ function create() {
                 { publicKey, signAllTransactions, signTransaction },
                 AnchorProvider.defaultOptions(),
             );
-            set(provider);
+            const program = new Program(IDL, PUBLIC_DAPPED_ADDRESS, provider);
+            set(program);
         };
         // eslint-disable-next-line func-style
         const onAccountChange = (key?: web3.PublicKey | null) => {
@@ -70,7 +74,8 @@ function create() {
                     { publicKey, signAllTransactions, signTransaction },
                     AnchorProvider.defaultOptions(),
                 );
-                set(provider);
+                const program = new Program(IDL, PUBLIC_DAPPED_ADDRESS, provider);
+                set(program);
             } else set(Status.Idle);
         };
         // eslint-disable-next-line func-style
@@ -98,3 +103,5 @@ export function get() {
     assert(hasContext(WALLET), 'wallet not initialized');
     return getContext<Store>(WALLET);
 }
+
+export type DappedProgram = Program<DappedOut>;
