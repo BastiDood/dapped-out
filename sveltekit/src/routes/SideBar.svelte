@@ -1,6 +1,6 @@
 <script>
     import { AppRail, AppRailAnchor, LightSwitch } from '@skeletonlabs/skeleton';
-    import { Home } from '@steeze-ui/heroicons';
+    import { Home, Trophy } from '@steeze-ui/heroicons';
     import { Icon } from '@steeze-ui/svelte-icon';
     import { page } from '$app/stores';
     $: ({ pathname } = $page.url);
@@ -13,5 +13,9 @@
     <AppRailAnchor href="/" selected={pathname === '/'}>
         <Icon src={Home} slot="lead" class="size-8" />
         <span>Home</span>
+    </AppRailAnchor>
+    <AppRailAnchor href="/contests/" selected={pathname.startsWith('/contests/')}>
+        <Icon src={Trophy} slot="lead" class="size-8" />
+        <span>Contests</span>
     </AppRailAnchor>
 </AppRail>

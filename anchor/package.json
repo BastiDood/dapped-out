@@ -1,6 +1,7 @@
 {
-    "name": "dapped-solana",
+    "name": "dapped-anchor",
     "type": "module",
+    "exports": { "default": "./target/types/dapped_out.ts" },
     "scripts": {
         "build": "anchor build",
         "test": "anchor test",

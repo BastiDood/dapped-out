@@ -8,7 +8,7 @@
         "ecmaVersion": 2020,
         "extraFileExtensions": [".svelte"]
     },
-    "env": { "mocha": true, "node": true },
+    "env": { "browser": true, "node": true },
     "overrides": [
         {
             "files": ["*.svelte"],
