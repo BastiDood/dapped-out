@@ -1,11 +1,11 @@
-import { AnchorProvider, Program, web3 } from '@coral-xyz/anchor';
-import { type DappedOut, IDL } from '../../../anchor/target/types/dapped_out';
+import { AnchorProvider, web3 } from '@coral-xyz/anchor';
 import { getContext, hasContext, setContext } from 'svelte';
+import { Dapped } from '$lib/program';
 import { assert } from '$lib/assert';
 import { browser } from '$app/environment';
 import { readable } from 'svelte/store';
 
-import { PUBLIC_DAPPED_ADDRESS, PUBLIC_SOLANA_RPC } from '$lib/env';
+import { PUBLIC_SOLANA_RPC } from '$lib/env';
 
 const WALLET = Symbol('wallet');
 const CONNECTION = new web3.Connection(PUBLIC_SOLANA_RPC);
@@ -50,7 +50,7 @@ function create() {
     const signTransaction = phantom.signTransaction.bind(phantom);
     const signAllTransactions = phantom.signAllTransactions.bind(phantom);
 
-    const { subscribe } = readable(Status.None as Program<DappedOut> | Status, set => {
+    const { subscribe } = readable(Status.None as Dapped | Status, set => {
         // eslint-disable-next-line func-style
         const onConnect = () => {
             const bytes = phantom.publicKey?.toBytes();
@@ -61,8 +61,7 @@ function create() {
                 { publicKey, signAllTransactions, signTransaction },
                 AnchorProvider.defaultOptions(),
             );
-            const program = new Program(IDL, PUBLIC_DAPPED_ADDRESS, provider);
-            set(program);
+            set(new Dapped(provider));
         };
         // eslint-disable-next-line func-style
         const onAccountChange = (key?: web3.PublicKey | null) => {
@@ -74,8 +73,7 @@ function create() {
                     { publicKey, signAllTransactions, signTransaction },
                     AnchorProvider.defaultOptions(),
                 );
-                const program = new Program(IDL, PUBLIC_DAPPED_ADDRESS, provider);
-                set(program);
+                set(new Dapped(provider));
             } else set(Status.Idle);
         };
         // eslint-disable-next-line func-style
@@ -103,5 +101,3 @@ export function get() {
     assert(hasContext(WALLET), 'wallet not initialized');
     return getContext<Store>(WALLET);
 }
-
-export type DappedProgram = Program<DappedOut>;
