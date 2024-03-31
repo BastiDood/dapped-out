@@ -64,9 +64,6 @@ importers:
       '@steeze-ui/heroicons':
         specifier: ^2.3.0
         version: 2.3.0
-      '@steeze-ui/octicons':
-        specifier: ^2.1.1
-        version: 2.1.1
       '@steeze-ui/svelte-icon':
         specifier: ^1.5.0
         version: 1.5.0(svelte@4.2.12)
@@ -1045,10 +1042,6 @@ packages:
 
   /@steeze-ui/heroicons@2.3.0:
     resolution: {integrity: sha512-tVOamjAd9ZzXgDwVKwbA3K+o86Z1ks/IMvqdgoCf9hKeGINVUIlAlGhM3wdpSmt7brIoBLgR70wlnsXGytZk9g==}
-    dev: true
-
-  /@steeze-ui/octicons@2.1.1:
-    resolution: {integrity: sha512-HDfk+IElAXFXU0BGgoMqXWJK2Tcukle7fwkLnKmKhh7fQzOp5vwvaRRxBi4r2p/6ccO66kdRhGCj1xy79mZOCg==}
     dev: true
 
   /@steeze-ui/svelte-icon@1.5.0(svelte@4.2.12):
