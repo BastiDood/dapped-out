@@ -12,35 +12,61 @@ class Dapped {
     #provider: AnchorProvider;
     /** Anchor program. */
     #program: DappedProgram;
-    /** Cached wallet address of the user. */
-    #walletAddress: web3.PublicKey;
     /** Program-derived mint account (if any). */
     #mintAddress: web3.PublicKey;
     /** Associated token account address of the user. */
-    #tokenAddress: web3.PublicKey;
+    #userTokenAddress: web3.PublicKey;
 
     constructor(provider: AnchorProvider) {
         this.#provider = provider;
         this.#program = new Program(IDL, PUBLIC_DAPPED_ADDRESS, this.#provider);
-        this.#walletAddress = provider.publicKey;
+        const walletAddress = this.#provider.publicKey;
         const [mintAddress, _] = web3.PublicKey.findProgramAddressSync(
-            [utils.bytes.utf8.encode('mint'), this.#walletAddress.toBuffer()],
+            [utils.bytes.utf8.encode('mint'), walletAddress.toBuffer()],
             this.#program.programId,
         );
         this.#mintAddress = mintAddress;
-        this.#tokenAddress = utils.token.associatedAddress({
+        this.#userTokenAddress = utils.token.associatedAddress({
             mint: this.#mintAddress,
-            owner: this.#walletAddress,
+            owner: walletAddress,
         });
+    }
+
+    get walletAddress() {
+        return this.#provider.publicKey;
+    }
+
+    get program() {
+        return this.#program;
+    }
+
+    get mintAddress() {
+        return this.#mintAddress;
+    }
+
+    get userTokenAddress() {
+        return this.#userTokenAddress;
+    }
+
+    getBalance(target = this.#provider.publicKey) {
+        return this.#provider.connection.getBalance(target);
+    }
+
+    getTokenBalance(target: web3.PublicKey) {
+        return this.#provider.connection.getTokenAccountBalance(target);
+    }
+
+    getUserTokenBalance() {
+        return this.getTokenBalance(this.#userTokenAddress);
     }
 
     createMint() {
         return this.#program.methods
             .createMint()
             .accounts({
-                wallet: this.#walletAddress,
+                wallet: this.#provider.publicKey,
                 mint: this.#mintAddress,
-                token: this.#tokenAddress,
+                token: this.#userTokenAddress,
                 systemProgram: web3.SystemProgram.programId,
                 tokenProgram: utils.token.TOKEN_PROGRAM_ID,
                 associatedTokenProgram: utils.token.ASSOCIATED_PROGRAM_ID,
@@ -48,58 +74,77 @@ class Dapped {
             .rpc();
     }
 
-    mintTo(amount: number | bigint) {
-        const inst = createMintToCheckedInstruction(
-            this.#mintAddress,
-            this.#tokenAddress,
-            this.#provider.publicKey,
-            amount,
-            0,
-        );
+    mintTo(target: web3.PublicKey, amount: number | bigint) {
+        const inst = createMintToCheckedInstruction(this.#mintAddress, target, this.#provider.publicKey, amount, 0);
         return this.#provider.sendAndConfirm(new web3.Transaction().add(inst));
+    }
+}
+
+class DappedContest {
+    #dapped: Dapped;
+    #slug: string;
+    #programTokenAddress: web3.PublicKey;
+    #contestAddress: web3.PublicKey;
+    #archiveAddress: web3.PublicKey;
+
+    constructor(dapped: Dapped, slug: string) {
+        this.#dapped = dapped;
+        this.#slug = slug;
+        const { programId } = this.#dapped.program;
+        const bytes = this.#dapped.walletAddress.toBytes();
+        const [token, _dst] = web3.PublicKey.findProgramAddressSync(
+            [utils.bytes.utf8.encode('token'), bytes, utils.bytes.utf8.encode(this.#slug)],
+            programId,
+        );
+        this.#programTokenAddress = token;
+        const [contest, _contest] = web3.PublicKey.findProgramAddressSync(
+            [utils.bytes.utf8.encode('contest'), bytes, utils.bytes.utf8.encode(this.#slug)],
+            programId,
+        );
+        this.#contestAddress = contest;
+        const [archive, _archive] = web3.PublicKey.findProgramAddressSync(
+            [utils.bytes.utf8.encode('archive'), bytes, utils.bytes.utf8.encode(this.#slug)],
+            programId,
+        );
+        this.#archiveAddress = archive;
+    }
+
+    get dapped() {
+        return this.#dapped;
     }
 
     createContest(
-        slug: string,
         name: string,
         stake: BN,
         delay: BN,
         offset: number,
         src: web3.PublicKey,
-        mint = this.#mintAddress,
+        mint = this.#dapped.mintAddress,
     ) {
-        const [contest, _] = web3.PublicKey.findProgramAddressSync(
-            [utils.bytes.utf8.encode('contest'), this.#walletAddress.toBytes(), utils.bytes.utf8.encode(slug)],
-            this.#program.programId,
-        );
-        return this.#program.methods
-            .createContest(slug, name, stake, delay, offset)
+        return this.#dapped.program.methods
+            .createContest(this.#slug, name, stake, delay, offset)
             .accounts({
-                wallet: this.#walletAddress,
+                wallet: this.#dapped.walletAddress,
                 mint,
                 src,
-                dst: this.#tokenAddress,
-                contest,
+                dst: this.#programTokenAddress,
+                contest: this.#contestAddress,
                 systemProgram: web3.SystemProgram.programId,
                 tokenProgram: utils.token.TOKEN_PROGRAM_ID,
             })
             .rpc();
     }
 
-    joinContest(slug: string, stake: BN, admin: web3.PublicKey, src: web3.PublicKey, mint = this.#mintAddress) {
-        const [contest, _] = web3.PublicKey.findProgramAddressSync(
-            [utils.bytes.utf8.encode('contest'), this.#walletAddress.toBytes(), utils.bytes.utf8.encode(slug)],
-            this.#program.programId,
-        );
-        return this.#program.methods
-            .joinContest(slug, stake)
+    joinContest(stake: BN, admin: web3.PublicKey, src: web3.PublicKey, mint = this.#dapped.mintAddress) {
+        return this.#dapped.program.methods
+            .joinContest(this.#slug, stake)
             .accounts({
-                wallet: this.#walletAddress,
+                wallet: this.#dapped.walletAddress,
                 admin,
                 mint,
                 src,
-                dst: this.#tokenAddress,
-                contest,
+                dst: this.#programTokenAddress,
+                contest: this.#contestAddress,
                 systemProgram: web3.SystemProgram.programId,
                 tokenProgram: utils.token.TOKEN_PROGRAM_ID,
                 associatedTokenProgram: utils.token.ASSOCIATED_PROGRAM_ID,
@@ -107,23 +152,15 @@ class Dapped {
             .rpc();
     }
 
-    closeContest(slug: string, tokens: web3.AccountMeta[], mint = this.#mintAddress) {
-        const [contest, _contest] = web3.PublicKey.findProgramAddressSync(
-            [utils.bytes.utf8.encode('contest'), this.#walletAddress.toBytes(), utils.bytes.utf8.encode(slug)],
-            this.#program.programId,
-        );
-        const [archive, _archive] = web3.PublicKey.findProgramAddressSync(
-            [utils.bytes.utf8.encode('archive'), this.#walletAddress.toBytes(), utils.bytes.utf8.encode(slug)],
-            this.#program.programId,
-        );
-        return this.#program.methods
-            .closeContest(slug)
+    closeContest(tokens: web3.AccountMeta[], mint = this.#dapped.mintAddress) {
+        return this.#dapped.program.methods
+            .closeContest(this.#slug)
             .accounts({
-                wallet: this.#walletAddress,
+                wallet: this.#dapped.walletAddress,
                 mint,
-                token: this.#tokenAddress,
-                contest,
-                archive,
+                token: this.#programTokenAddress,
+                contest: this.#contestAddress,
+                archive: this.#archiveAddress,
                 systemProgram: web3.SystemProgram.programId,
                 tokenProgram: utils.token.TOKEN_PROGRAM_ID,
             })
@@ -132,4 +169,4 @@ class Dapped {
     }
 }
 
-export { IDL, Dapped };
+export { Dapped, DappedContest, IDL };
