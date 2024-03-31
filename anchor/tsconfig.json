@@ -2,6 +2,7 @@
     "compilerOptions": {
         "esModuleInterop": true,
         "skipLibCheck": true,
+        "isolatedModules": true,
         "target": "ESNext",
         "verbatimModuleSyntax": true,
         "moduleDetection": "force",
