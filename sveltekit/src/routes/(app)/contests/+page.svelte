@@ -15,10 +15,7 @@
         try {
             await anchor.connect();
         } catch (err) {
-            if (err instanceof Error) {
-                toast.trigger({ message: err.message, background: 'variant-filled-error' });
-                if ('code' in err && typeof err.code === 'number' && err.code === 4001) return;
-            }
+            if (err instanceof Error) toast.trigger({ message: err.message, background: 'variant-filled-error' });
             throw err;
         } finally {
             button.disabled = false;
