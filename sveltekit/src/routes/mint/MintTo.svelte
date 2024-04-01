@@ -1,17 +1,18 @@
 <script lang="ts">
-    import { validateFormInteger, validateFormPublicKey } from '$lib/form';
+    import { validateFormInteger, validateFormString } from '$lib/form';
     import { Dapped } from '$lib/program';
     import { Icon } from '@steeze-ui/svelte-icon';
     import { PlusCircle } from '@steeze-ui/heroicons';
     import { assert } from '$lib/assert';
     import { createEventDispatcher } from 'svelte';
     import { getToastStore } from '@skeletonlabs/skeleton';
+    import { web3 } from '@coral-xyz/anchor';
 
     // eslint-disable-next-line init-declarations
     export let program: Dapped;
 
     const toast = getToastStore();
-    const dispatch = createEventDispatcher<{ mint: string }>();
+    const dispatch = createEventDispatcher<{ mint: null }>();
     async function submit(form: HTMLFormElement, button: HTMLElement | null) {
         assert(button !== null, 'submitter is null');
         assert(button instanceof HTMLButtonElement, 'submitter is not a button');
@@ -19,13 +20,13 @@
         try {
             const data = new FormData(form);
             const amount = validateFormInteger(data.get('amount'));
-            const address = validateFormPublicKey(data.get('address'));
-            const tx = await program.mintTo(amount, address);
+            const address = new web3.PublicKey(validateFormString(data.get('address')));
+            await program.mintTo(amount, address);
             toast.trigger({
                 message: `Successfully minted ${amount} to ${address}.`,
                 background: 'variant-filled-success',
             });
-            dispatch('mint', tx);
+            dispatch('mint');
         } catch (err) {
             if (err instanceof Error)
                 toast.trigger({
@@ -58,7 +59,7 @@
     </label>
     <label class="label">
         <span>Amount</span>
-        <input required type="number" name="amount" placeholder="Amount" class="input px-4 py-2" />
+        <input required type="number" min="1" name="amount" placeholder="Amount" class="input px-4 py-2" />
     </label>
     <button type="submit" class="variant-filled-success btn w-full">
         <Icon src={PlusCircle} theme="mini" class="size-8" />

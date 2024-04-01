@@ -47,7 +47,7 @@ class Dapped {
         return this.#userTokenAddress;
     }
 
-    getBalance(target = this.#provider.publicKey) {
+    getBalance(target = this.walletAddress) {
         return this.#provider.connection.getBalance(target);
     }
 
@@ -59,11 +59,11 @@ class Dapped {
         return this.getTokenBalance(this.#userTokenAddress);
     }
 
-    createMint() {
-        return this.#program.methods
+    async createMint() {
+        const tx = await this.#program.methods
             .createMint()
             .accounts({
-                wallet: this.#provider.publicKey,
+                wallet: this.walletAddress,
                 mint: this.#mintAddress,
                 token: this.#userTokenAddress,
                 systemProgram: web3.SystemProgram.programId,
@@ -71,12 +71,14 @@ class Dapped {
                 associatedTokenProgram: utils.token.ASSOCIATED_PROGRAM_ID,
             })
             .rpc({ commitment: 'finalized' });
+        console.log('createMint', tx);
     }
 
-    mintTo(amount: number | bigint, target = this.#userTokenAddress) {
-        const inst = createMintToCheckedInstruction(this.#mintAddress, target, this.#provider.publicKey, amount, 0);
-        const tx = new web3.Transaction().add(inst);
-        return this.#provider.sendAndConfirm(tx, [], { commitment: 'finalized' });
+    async mintTo(amount: number | bigint, target = this.#userTokenAddress, decimals = 0) {
+        const inst = createMintToCheckedInstruction(this.#mintAddress, target, this.walletAddress, amount, decimals);
+        const transaction = new web3.Transaction().add(inst);
+        const tx = await this.#provider.sendAndConfirm(transaction, [], { commitment: 'finalized' });
+        console.log('mintTo', tx);
     }
 
     getMint() {
@@ -125,15 +127,15 @@ class DappedContest {
         return this.#dapped;
     }
 
-    createContest(
+    async createContest(
         name: string,
         stake: BN,
         delay: BN,
         offset: number,
-        src: web3.PublicKey,
+        src = this.#dapped.userTokenAddress,
         mint = this.#dapped.mintAddress,
     ) {
-        return this.#dapped.program.methods
+        const tx = await this.#dapped.program.methods
             .createContest(this.#slug, name, stake, delay, offset)
             .accounts({
                 wallet: this.#dapped.walletAddress,
@@ -145,10 +147,11 @@ class DappedContest {
                 tokenProgram: utils.token.TOKEN_PROGRAM_ID,
             })
             .rpc();
+        console.log('createContest', tx);
     }
 
-    joinContest(stake: BN, admin: web3.PublicKey, src: web3.PublicKey, mint = this.#dapped.mintAddress) {
-        return this.#dapped.program.methods
+    async joinContest(stake: BN, admin: web3.PublicKey, src: web3.PublicKey, mint = this.#dapped.mintAddress) {
+        const tx = await this.#dapped.program.methods
             .joinContest(this.#slug, stake)
             .accounts({
                 wallet: this.#dapped.walletAddress,
@@ -162,10 +165,11 @@ class DappedContest {
                 associatedTokenProgram: utils.token.ASSOCIATED_PROGRAM_ID,
             })
             .rpc();
+        console.log('joinContest', tx);
     }
 
-    closeContest(tokens: web3.AccountMeta[], mint = this.#dapped.mintAddress) {
-        return this.#dapped.program.methods
+    async closeContest(tokens: web3.AccountMeta[], mint = this.#dapped.mintAddress) {
+        const tx = await this.#dapped.program.methods
             .closeContest(this.#slug)
             .accounts({
                 wallet: this.#dapped.walletAddress,
@@ -178,6 +182,7 @@ class DappedContest {
             })
             .remainingAccounts(tokens)
             .rpc();
+        console.log('closeContest', tx);
     }
 }
 

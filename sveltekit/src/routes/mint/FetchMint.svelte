@@ -12,8 +12,8 @@
     export let program: Dapped;
 
     let refresh = Symbol();
-    function refreshMint({ detail }: CustomEvent<string>) {
-        refresh = Symbol(detail);
+    function refreshMint() {
+        refresh = Symbol();
     }
 
     async function getMint() {
@@ -29,16 +29,13 @@
     async function createMint(button: HTMLButtonElement) {
         button.disabled = true;
         try {
-            const tx = await program.createMint();
-            console.log('createMint', tx);
+            await program.createMint();
         } catch (err) {
-            if (err instanceof Error) {
+            if (err instanceof Error)
                 toast.trigger({
                     message: err.message,
                     background: 'variant-filled-error',
                 });
-                if ('code' in err && typeof err.code === 'number' && err.code === 4001) return;
-            }
             console.error(err);
             throw err;
         } finally {
