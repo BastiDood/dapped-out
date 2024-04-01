@@ -14,7 +14,7 @@
     <table class="table table-hover table-compact">
         <tbody>
             <tr>
-                <th scope="row">Address</th>
+                <th scope="row">Mint Address</th>
                 <td><code class="code">{address}</code></td>
             </tr>
             <tr>
