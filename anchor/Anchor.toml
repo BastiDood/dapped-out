@@ -5,17 +5,19 @@ seeds = false
 skip-lint = false
 
 [programs.localnet]
-dapped_out = "89si6S2bCwct7sqLE5ihvrJPtV3jYuE6HBa4Q2MoATtM"
+dapped_out = "54wVQ4CWqt7daAdyGLDCUnFTQQLyS51Bnzppr1czxhs9"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "localnet"
-wallet = "~/.config/solana/id.json"
+cluster = "Localnet"
+wallet = "/home/basti/.config/solana/id.json"
 
 [scripts]
 test = "pnpm vitest run"
 
 [test]
 startup_wait = 15000
+shutdown_wait = 2000
+upgradeable = false
