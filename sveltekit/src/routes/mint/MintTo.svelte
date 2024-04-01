@@ -53,7 +53,7 @@
             name="address"
             placeholder="Address"
             value={program.userTokenAddress}
-            class="input px-4 py-2"
+            class="input px-4 py-2 font-mono"
         />
     </label>
     <label class="label">
