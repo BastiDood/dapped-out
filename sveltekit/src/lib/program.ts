@@ -1,6 +1,6 @@
 import { type AnchorProvider, type BN, Program, utils, web3 } from '@coral-xyz/anchor';
 import { type DappedOut, IDL } from '../../../anchor/target/types/dapped_out';
-import { createMintToCheckedInstruction } from '@solana/spl-token';
+import { createMintToCheckedInstruction, getMint } from '@solana/spl-token';
 
 import { PUBLIC_DAPPED_ADDRESS } from '$lib/env';
 
@@ -70,12 +70,17 @@ class Dapped {
                 tokenProgram: utils.token.TOKEN_PROGRAM_ID,
                 associatedTokenProgram: utils.token.ASSOCIATED_PROGRAM_ID,
             })
-            .rpc();
+            .rpc({ commitment: 'finalized' });
     }
 
-    mintTo(target: web3.PublicKey, amount: number | bigint) {
+    mintTo(amount: number | bigint, target = this.#userTokenAddress) {
         const inst = createMintToCheckedInstruction(this.#mintAddress, target, this.#provider.publicKey, amount, 0);
-        return this.#provider.sendAndConfirm(new web3.Transaction().add(inst));
+        const tx = new web3.Transaction().add(inst);
+        return this.#provider.sendAndConfirm(tx, [], { commitment: 'finalized' });
+    }
+
+    getMint() {
+        return getMint(this.#provider.connection, this.#mintAddress);
     }
 }
 

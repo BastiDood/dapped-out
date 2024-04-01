@@ -1,7 +1,7 @@
 <script lang="ts">
     import { ProgressBar, getToastStore } from '@skeletonlabs/skeleton';
     import { Status, get } from '$lib/wallet';
-    import CreateMint from './CreateMint.svelte';
+    import FetchMint from './FetchMint.svelte';
     import { Icon } from '@steeze-ui/svelte-icon';
     import { Wallet } from '@steeze-ui/heroicons';
 
@@ -45,5 +45,5 @@
         >.</WarningAlert
     >
 {:else}
-    <CreateMint program={$anchor} />
+    <FetchMint program={$anchor} />
 {/if}
