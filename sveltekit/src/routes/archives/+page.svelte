@@ -2,7 +2,7 @@
     import { ProgressBar, getToastStore } from '@skeletonlabs/skeleton';
     import { Status, get } from '$lib/wallet';
     import { Icon } from '@steeze-ui/svelte-icon';
-    import ListContests from './ListContests.svelte';
+    import ListArchives from './ListArchives.svelte';
     import { Wallet } from '@steeze-ui/heroicons';
 
     import ErrorAlert from '$lib/alerts/Error.svelte';
@@ -51,6 +51,6 @@
             >.</WarningAlert
         >
     {:else}
-        <ListContests program={$anchor} />
+        <ListArchives program={$anchor} />
     {/if}
 </div>

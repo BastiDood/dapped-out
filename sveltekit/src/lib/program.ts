@@ -82,6 +82,14 @@ class Dapped {
     getMint() {
         return getMint(this.#provider.connection, this.#mintAddress);
     }
+
+    fetchContests() {
+        return this.#program.account.contest.all();
+    }
+
+    fetchArchives() {
+        return this.#program.account.archive.all();
+    }
 }
 
 class DappedContest {
