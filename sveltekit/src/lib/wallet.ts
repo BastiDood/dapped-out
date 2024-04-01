@@ -78,6 +78,7 @@ function create() {
         };
         // eslint-disable-next-line func-style
         const onDisconnect = () => set(Status.Idle);
+        onConnect();
         phantom.on('connect', onConnect).on('accountChanged', onAccountChange).on('disconnect', onDisconnect);
         return () => {
             phantom.off('connect', onConnect).off('accountChanged', onAccountChange).off('disconnect', onDisconnect);

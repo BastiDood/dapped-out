@@ -10,7 +10,7 @@ export default defineConfig({
         sveltekit(),
         purgeCss(),
         nodePolyfills({
-            include: ['buffer', 'crypto', 'stream', 'vm'],
+            include: ['buffer', 'crypto', 'stream', 'util', 'vm'],
             globals: { Buffer: true },
         }),
     ],
