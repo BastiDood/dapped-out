@@ -11,7 +11,7 @@
     <ProgressBar />
 {:then archives}
     {#if archives.length === 0}
-        <WarningAlert>There are no contests yet.</WarningAlert>
+        <WarningAlert>There are no archives yet.</WarningAlert>
     {/if}
 {:catch err}
     <ErrorAlert>{err}</ErrorAlert>
