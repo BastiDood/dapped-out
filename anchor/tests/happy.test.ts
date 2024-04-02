@@ -70,20 +70,22 @@ describe('dapped-out', () => {
             })
             .rpc();
         const {
+            host,
             slug,
             name,
             stake,
             mint,
             offset,
-            participants: [host, ...rest],
+            participants: [first, ...rest],
         } = await program.account.contest.fetch(contestAddress);
+        expect(provider.publicKey.equals(host)).toBeTruthy();
         expect(slug).eq('test');
         expect(name).eq('Test');
         expect(mint.equals(mintAddress)).toBeTruthy();
         expect(stake.eqn(10)).toBeTruthy();
         expect(offset).eq(20);
-        expect(host?.token.equals(selfTokenAccountAddress)).toBeTruthy();
-        expect(host?.delay.eqn(200)).toBeTruthy();
+        expect(first?.token.equals(selfTokenAccountAddress)).toBeTruthy();
+        expect(first?.delay.eqn(200)).toBeTruthy();
         expect(rest).toHaveLength(0);
     });
 
@@ -150,22 +152,24 @@ describe('dapped-out', () => {
             .signers([other])
             .rpc();
         const {
+            host,
             slug,
             name,
             stake,
             mint,
             offset,
-            participants: [host, user, ...rest],
+            participants: [first, second, ...rest],
         } = await program.account.contest.fetch(contestAddress);
+        expect(provider.publicKey.equals(host)).toBeTruthy();
         expect(slug).eq('test');
         expect(name).eq('Test');
         expect(mint.equals(mintAddress)).toBeTruthy();
         expect(stake.eqn(10)).toBeTruthy();
         expect(offset).eq(20);
-        expect(host?.token.equals(selfTokenAccountAddress)).toBeTruthy();
-        expect(host?.delay.eqn(200)).toBeTruthy();
-        expect(user?.token.equals(otherTokenAccountAddress)).toBeTruthy();
-        expect(user?.delay.eqn(200)).toBeTruthy();
+        expect(first?.token.equals(selfTokenAccountAddress)).toBeTruthy();
+        expect(first?.delay.eqn(200)).toBeTruthy();
+        expect(second?.token.equals(otherTokenAccountAddress)).toBeTruthy();
+        expect(second?.delay.eqn(200)).toBeTruthy();
         expect(rest).toBeTruthy();
     });
 

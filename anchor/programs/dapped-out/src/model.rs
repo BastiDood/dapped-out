@@ -22,6 +22,8 @@ pub struct Participant {
 #[account]
 #[derive(InitSpace)]
 pub struct Contest {
+    /// Wallet of the host/author of the contest.
+    pub host: Pubkey,
     /// Unique slug provided by the contest initiator.
     #[max_len(16)]
     pub slug: String,

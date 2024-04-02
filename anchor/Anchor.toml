@@ -5,7 +5,7 @@ seeds = false
 skip-lint = false
 
 [programs.localnet]
-dapped_out = "54wVQ4CWqt7daAdyGLDCUnFTQQLyS51Bnzppr1czxhs9"
+dapped_out = "7TGLYkGJFEx9JvHqWDzJKTkad6AfsBFWywPk9fXDF5yF"
 
 [registry]
 url = "https://api.apr.dev"

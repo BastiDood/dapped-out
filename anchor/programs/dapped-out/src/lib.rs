@@ -6,7 +6,7 @@ use anchor_lang::prelude::*;
 use inst::*;
 use model::*;
 
-declare_id!("54wVQ4CWqt7daAdyGLDCUnFTQQLyS51Bnzppr1czxhs9");
+declare_id!("7TGLYkGJFEx9JvHqWDzJKTkad6AfsBFWywPk9fXDF5yF");
 
 #[program]
 mod dapped_out {
@@ -27,6 +27,7 @@ mod dapped_out {
         let Context { accounts: CreateContest { wallet, mint, contest, src, dst, token_program, .. }, bumps, .. } = ctx;
 
         // Initialize the contest data
+        contest.host = wallet.key();
         contest.slug = slug;
         contest.name = name;
         contest.stake = stake;
