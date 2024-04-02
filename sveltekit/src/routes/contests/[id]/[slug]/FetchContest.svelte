@@ -11,6 +11,8 @@
     // eslint-disable-next-line init-declarations
     export let program: DappedContest;
 
+    let refresh = Symbol();
+
     const toast = getToastStore();
     async function submit(form: HTMLFormElement, button: HTMLElement | null, admin: web3.PublicKey) {
         assert(button !== null, 'submitter is null');
@@ -23,6 +25,7 @@
             const delay = parseInt(meter.value, 10);
             if (delay <= 0) return;
             await program.joinContest(new BN(delay));
+            refresh = Symbol();
         } catch (err) {
             if (err instanceof Error)
                 toast.trigger({
@@ -39,21 +42,23 @@
 </script>
 
 <div class="space-y-4">
-    {#await program.fetch()}
-        <ProgressBar />
-    {:then { host, name, participants }}
-        <h1 class="h1">{name}</h1>
-        {#if participants.some(({ token }) => program.dapped.userTokenAddress.equals(token))}
-            <WarningAlert>You are already a participant of this contest.</WarningAlert>
-        {:else}
-            <form
-                on:submit|self|preventDefault|stopPropagation={({ currentTarget, submitter }) =>
-                    submit(currentTarget, submitter, host)}
-            >
-                <DelayMeter id="delay" name="delay" max={2000} targets={participants} />
-            </form>
-        {/if}
-    {:catch err}
-        <ErrorAlert>{err}</ErrorAlert>
-    {/await}
+    {#key refresh}
+        {#await program.fetch()}
+            <ProgressBar />
+        {:then { host, name, participants }}
+            <h1 class="h1">{name}</h1>
+            {#if participants.some(({ token }) => program.dapped.userTokenAddress.equals(token))}
+                <WarningAlert>You are already a participant of this contest.</WarningAlert>
+            {:else}
+                <form
+                    on:submit|self|preventDefault|stopPropagation={({ currentTarget, submitter }) =>
+                        submit(currentTarget, submitter, host)}
+                >
+                    <DelayMeter id="delay" name="delay" max={2000} targets={participants} />
+                </form>
+            {/if}
+        {:catch err}
+            <ErrorAlert>{err}</ErrorAlert>
+        {/await}
+    {/key}
 </div>
