@@ -5,13 +5,15 @@
     import FetchContest from './FetchContest.svelte';
     import { Icon } from '@steeze-ui/svelte-icon';
     import { Wallet } from '@steeze-ui/heroicons';
+    import { web3 } from '@coral-xyz/anchor';
 
     import ErrorAlert from '$lib/alerts/Error.svelte';
     import WarningAlert from '$lib/alerts/Warning.svelte';
 
     // eslint-disable-next-line init-declarations
     export let data;
-    $: ({ slug } = data);
+    $: ({ id, slug } = data);
+    $: host = new web3.PublicKey(id);
 
     const anchor = get();
     const toast = getToastStore();
@@ -50,6 +52,6 @@
         >.</WarningAlert
     >
 {:else}
-    {@const program = new DappedContest($anchor, slug)}
+    {@const program = new DappedContest($anchor, slug, host)}
     <FetchContest {program} />
 {/if}

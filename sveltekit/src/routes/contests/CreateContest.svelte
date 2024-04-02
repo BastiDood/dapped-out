@@ -22,14 +22,15 @@
             const meter = form.elements.namedItem('delay');
             assert(meter !== null, 'delay meter is null');
             assert(meter instanceof HTMLInputElement, 'delay meter is not an input');
-            const delay = new BN(parseInt(meter.value, 10));
-            if (delay.isNeg()) {
+            const value = parseInt(meter.value, 10);
+            if (value <= 0) {
                 toast.trigger({
                     message: 'Please set a valid delay.',
                     background: 'variant-filled-error',
                 });
                 return;
             }
+            const delay = new BN(value);
             const data = new FormData(form);
             const slug = validateFormString(data.get('slug'));
             const name = validateFormString(data.get('name'));
@@ -38,7 +39,7 @@
             const offset = validateFormInteger(data.get('offset'));
             const dapped = new DappedContest(program, slug);
             await dapped.createContest(name, stake, delay, offset, mint);
-            await goto(`/contests/${slug}/`);
+            await goto(`/contests/${program.walletAddress}/${slug}/`);
         } catch (err) {
             if (err instanceof Error)
                 toast.trigger({

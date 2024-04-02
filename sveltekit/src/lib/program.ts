@@ -100,16 +100,18 @@ class Dapped {
 
 class DappedContest {
     #dapped: Dapped;
+    #host: web3.PublicKey;
     #slug: string;
     #programTokenAddress: web3.PublicKey;
     #contestAddress: web3.PublicKey;
     #archiveAddress: web3.PublicKey;
 
-    constructor(dapped: Dapped, slug: string) {
+    constructor(dapped: Dapped, slug: string, host = dapped.walletAddress) {
         this.#dapped = dapped;
+        this.#host = host;
         this.#slug = slug;
         const { programId } = this.#dapped.program;
-        const bytes = this.#dapped.walletAddress.toBytes();
+        const bytes = this.#host.toBytes();
         const [token, _dst] = web3.PublicKey.findProgramAddressSync(
             [utils.bytes.utf8.encode('token'), bytes, utils.bytes.utf8.encode(this.#slug)],
             programId,
@@ -154,9 +156,14 @@ class DappedContest {
         console.log('createContest', tx);
     }
 
-    async joinContest(stake: BN, admin: web3.PublicKey, src: web3.PublicKey, mint = this.#dapped.mintAddress) {
+    async joinContest(
+        delay: BN,
+        src = this.#dapped.userTokenAddress,
+        mint = this.#dapped.mintAddress,
+        admin = this.#host,
+    ) {
         const tx = await this.#dapped.program.methods
-            .joinContest(this.#slug, stake)
+            .joinContest(this.#slug, delay)
             .accounts({
                 wallet: this.#dapped.walletAddress,
                 admin,
