@@ -2,6 +2,7 @@
     import { type Dapped, DappedContest } from '$lib/program';
     import { validateFormInteger, validateFormString } from '$lib/form';
     import BN from 'bn.js';
+    import DelayMeter from './DelayMeter.svelte';
     import { Icon } from '@steeze-ui/svelte-icon';
     import { PlusCircle } from '@steeze-ui/heroicons';
     import { assert } from '$lib/assert';
@@ -17,14 +18,24 @@
         assert(button instanceof HTMLButtonElement, 'submitter is not a button');
         button.disabled = true;
         try {
+            const meter = form.elements.namedItem('delay');
+            assert(meter !== null, 'delay meter is null');
+            assert(meter instanceof HTMLInputElement, 'delay meter is not an input');
+            const delay = parseInt(meter.value, 10);
+            if (delay <= 0) {
+                toast.trigger({
+                    message: 'Please set a valid delay.',
+                    background: 'variant-filled-error',
+                });
+                return;
+            }
             const data = new FormData(form);
             const slug = validateFormString(data.get('slug'));
             const name = validateFormString(data.get('name'));
             const stake = new BN(validateFormInteger(data.get('stake')));
-            const delay = new BN(validateFormInteger(data.get('delay')));
             const offset = validateFormInteger(data.get('offset'));
             const dapped = new DappedContest(program, slug);
-            await dapped.createContest(name, stake, delay, offset);
+            await dapped.createContest(name, stake, new BN(delay), offset);
             await goto(`/contests/${slug}/`);
         } catch (err) {
             if (err instanceof Error)
@@ -45,11 +56,7 @@
     on:submit|self|preventDefault|stopPropagation={({ currentTarget, submitter }) => submit(currentTarget, submitter)}
     class="space-y-4"
 >
-    <label class="label">
-        <!-- TODO: This should be controlled by the spacebar. -->
-        <span>Delay</span>
-        <input required disabled type="range" min="0" max="5000" value="0" name="delay" class="input px-4 py-2" />
-    </label>
+    <DelayMeter name="delay" max={2000}>Delay</DelayMeter>
     <label class="label">
         <span>Slug</span>
         <input
