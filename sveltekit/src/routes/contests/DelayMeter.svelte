@@ -42,7 +42,7 @@
     <span><slot /></span>
     <div class="input-group input-group-divider grid-cols-[1fr_auto] gap-2 p-2">
         <input required disabled type="range" {min} {max} {value} {name} class="input px-4 py-2" />
-        <button type="button" class="{variant} btn-icon btn-icon-xl" on:click={toggle}>
+        <button type="button" class="{variant} btn-icon-md btn-icon !p-2" on:click={toggle}>
             <Icon {src} theme="mini" />
         </button>
     </div>

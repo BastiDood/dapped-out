@@ -89,6 +89,10 @@ class Dapped {
         return this.#program.account.contest.all();
     }
 
+    fetchContest(address: web3.PublicKey) {
+        return this.#program.account.contest.fetch(address);
+    }
+
     fetchArchives() {
         return this.#program.account.archive.all();
     }
@@ -132,8 +136,8 @@ class DappedContest {
         stake: BN,
         delay: BN,
         offset: number,
-        src = this.#dapped.userTokenAddress,
         mint = this.#dapped.mintAddress,
+        src = this.#dapped.userTokenAddress,
     ) {
         const tx = await this.#dapped.program.methods
             .createContest(this.#slug, name, stake, delay, offset)
@@ -183,6 +187,10 @@ class DappedContest {
             .remainingAccounts(tokens)
             .rpc({ commitment: 'finalized' });
         console.log('closeContest', tx);
+    }
+
+    fetch() {
+        return this.#dapped.fetchContest(this.#contestAddress);
     }
 }
 

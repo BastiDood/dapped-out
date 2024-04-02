@@ -8,6 +8,7 @@
     import { assert } from '$lib/assert';
     import { getToastStore } from '@skeletonlabs/skeleton';
     import { goto } from '$app/navigation';
+    import { web3 } from '@coral-xyz/anchor';
 
     // eslint-disable-next-line init-declarations
     export let program: Dapped;
@@ -21,8 +22,8 @@
             const meter = form.elements.namedItem('delay');
             assert(meter !== null, 'delay meter is null');
             assert(meter instanceof HTMLInputElement, 'delay meter is not an input');
-            const delay = parseInt(meter.value, 10);
-            if (delay <= 0) {
+            const delay = new BN(parseInt(meter.value, 10));
+            if (delay.isNeg()) {
                 toast.trigger({
                     message: 'Please set a valid delay.',
                     background: 'variant-filled-error',
@@ -32,10 +33,11 @@
             const data = new FormData(form);
             const slug = validateFormString(data.get('slug'));
             const name = validateFormString(data.get('name'));
+            const mint = new web3.PublicKey(validateFormString(data.get('mint')));
             const stake = new BN(validateFormInteger(data.get('stake')));
             const offset = validateFormInteger(data.get('offset'));
             const dapped = new DappedContest(program, slug);
-            await dapped.createContest(name, stake, new BN(delay), offset);
+            await dapped.createContest(name, stake, delay, offset, mint);
             await goto(`/contests/${slug}/`);
         } catch (err) {
             if (err instanceof Error)
@@ -72,6 +74,17 @@
     <label class="label">
         <span>Name</span>
         <input required type="text" maxlength="16" name="name" placeholder="Name" class="input px-4 py-2" />
+    </label>
+    <label class="label">
+        <span>Mint</span>
+        <input
+            required
+            type="text"
+            name="mint"
+            placeholder="Mint"
+            value={program.mintAddress}
+            class="input px-4 py-2 font-mono"
+        />
     </label>
     <label class="label">
         <span>Stake</span>
