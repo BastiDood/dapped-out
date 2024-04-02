@@ -146,7 +146,7 @@ class DappedContest {
                 systemProgram: web3.SystemProgram.programId,
                 tokenProgram: utils.token.TOKEN_PROGRAM_ID,
             })
-            .rpc();
+            .rpc({ commitment: 'finalized' });
         console.log('createContest', tx);
     }
 
@@ -164,7 +164,7 @@ class DappedContest {
                 tokenProgram: utils.token.TOKEN_PROGRAM_ID,
                 associatedTokenProgram: utils.token.ASSOCIATED_PROGRAM_ID,
             })
-            .rpc();
+            .rpc({ commitment: 'finalized' });
         console.log('joinContest', tx);
     }
 
@@ -181,7 +181,7 @@ class DappedContest {
                 tokenProgram: utils.token.TOKEN_PROGRAM_ID,
             })
             .remainingAccounts(tokens)
-            .rpc();
+            .rpc({ commitment: 'finalized' });
         console.log('closeContest', tx);
     }
 }
