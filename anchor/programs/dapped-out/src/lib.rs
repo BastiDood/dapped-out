@@ -71,7 +71,7 @@ mod dapped_out {
     }
 
     pub fn close_contest<'info>(ctx: Context<'_, '_, '_, 'info, CloseContest<'info>>, _slug: String) -> Result<()> {
-        use anchor_spl::token::{transfer_checked, TransferChecked};
+        use anchor_spl::token::{close_account, transfer_checked, CloseAccount, TransferChecked};
         let Context {
             accounts: CloseContest { wallet, mint, token, contest, archive, token_program, .. },
             bumps,
@@ -124,12 +124,22 @@ mod dapped_out {
             transfer_checked(cpi, reward, mint.decimals)?;
         }
 
-        // Close the token account by moving the residual to the host
-        use anchor_spl::token::{close_account, CloseAccount};
+        // Move the residual to the host
+        token.reload()?;
+        let args = TransferChecked {
+            mint: mint.to_account_info(),
+            authority: wallet.to_account_info(),
+            from: token.to_account_info(),
+            to: host_account.clone(),
+        };
+        let cpi = CpiContext::new(token_program.to_account_info(), args);
+        transfer_checked(cpi, token.amount, mint.decimals)?;
+
+        // Then finally close the token account
         let args = CloseAccount {
             account: token.to_account_info(),
             authority: wallet.to_account_info(),
-            destination: host_account.clone(),
+            destination: wallet.to_account_info(),
         };
         let cpi = CpiContext::new(token_program.to_account_info(), args);
         close_account(cpi)?;
