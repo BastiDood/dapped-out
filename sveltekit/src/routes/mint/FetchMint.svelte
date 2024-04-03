@@ -1,5 +1,6 @@
 <script lang="ts">
     import { ProgressBar, getToastStore } from '@skeletonlabs/skeleton';
+    import { utils, web3 } from '@coral-xyz/anchor';
     import { CurrencyDollar } from '@steeze-ui/heroicons';
     import type { Dapped } from '$lib/program';
     import DisplayMint from './DisplayMint.svelte';
@@ -10,6 +11,10 @@
 
     // eslint-disable-next-line init-declarations
     export let program: Dapped;
+    $: [mint, _] = web3.PublicKey.findProgramAddressSync(
+        [utils.bytes.utf8.encode('mint'), program.walletAddress.toBytes()],
+        program.program.programId,
+    );
 
     let refresh = Symbol();
     function refreshMint() {
@@ -18,7 +23,7 @@
 
     async function getMint() {
         try {
-            return await program.getMint();
+            return await program.getMint(mint);
         } catch (err) {
             if (err instanceof Error && err.name === 'TokenAccountNotFoundError') return null;
             throw err;
@@ -64,7 +69,7 @@
                 {#if isInitialized}
                     <DisplayMint {address} {decimals} {supply} {mintAuthority} {freezeAuthority} />
                     {#if mintAuthority !== null && program.walletAddress.equals(mintAuthority)}
-                        <MintTo {program} on:mint={refreshMint} />
+                        <MintTo mint={address} {program} on:mint={refreshMint} />
                     {/if}
                 {:else}
                     <WarningAlert>This mint account has not been initialized yet.</WarningAlert>

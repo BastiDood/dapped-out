@@ -52,6 +52,6 @@
         >.</WarningAlert
     >
 {:else}
-    {@const program = new DappedContest($anchor, slug, host)}
+    {@const program = new DappedContest($anchor, host, slug)}
     <FetchContest {program} />
 {/if}

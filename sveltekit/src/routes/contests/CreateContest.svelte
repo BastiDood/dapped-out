@@ -37,7 +37,7 @@
             const mint = new web3.PublicKey(validateFormString(data.get('mint')));
             const stake = new BN(validateFormInteger(data.get('stake')));
             const offset = validateFormInteger(data.get('offset'));
-            const dapped = new DappedContest(program, slug);
+            const dapped = new DappedContest(program, program.walletAddress, slug);
             await dapped.createContest(name, stake, delay, offset, mint);
             await goto(`/contests/${program.walletAddress}/${slug}/`);
         } catch (err) {
@@ -78,14 +78,7 @@
     </label>
     <label class="label">
         <span>Mint</span>
-        <input
-            required
-            type="text"
-            name="mint"
-            placeholder="Mint"
-            value={program.mintAddress}
-            class="input px-4 py-2 font-mono"
-        />
+        <input required type="text" name="mint" placeholder="Mint" class="input px-4 py-2 font-mono" />
     </label>
     <label class="label">
         <span>Stake</span>

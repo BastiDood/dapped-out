@@ -10,6 +10,8 @@
 
     // eslint-disable-next-line init-declarations
     export let program: Dapped;
+    // eslint-disable-next-line init-declarations
+    export let mint: web3.PublicKey;
 
     const toast = getToastStore();
     const dispatch = createEventDispatcher<{ mint: null }>();
@@ -19,11 +21,12 @@
         button.disabled = true;
         try {
             const data = new FormData(form);
+            const mint = new web3.PublicKey(validateFormString(data.get('mint')));
+            const wallet = new web3.PublicKey(validateFormString(data.get('wallet')));
             const amount = validateFormInteger(data.get('amount'));
-            const address = new web3.PublicKey(validateFormString(data.get('address')));
-            await program.mintTo(amount, address);
+            await program.mintTo(mint, wallet, amount, 0);
             toast.trigger({
-                message: `Successfully minted ${amount} to ${address}.`,
+                message: `Successfully minted ${amount} to ${wallet}.`,
                 background: 'variant-filled-success',
             });
             dispatch('mint');
@@ -47,15 +50,12 @@
     class="space-y-4"
 >
     <label class="label">
-        <span>Token Account Address</span>
-        <input
-            required
-            type="text"
-            name="address"
-            placeholder="Address"
-            value={program.userTokenAddress}
-            class="input px-4 py-2 font-mono"
-        />
+        <span>Mint Address</span>
+        <input required type="text" name="mint" placeholder="Mint" value={mint} class="input px-4 py-2 font-mono" />
+    </label>
+    <label class="label">
+        <span>Wallet Address</span>
+        <input required type="text" name="wallet" placeholder="Wallet" class="input px-4 py-2 font-mono" />
     </label>
     <label class="label">
         <span>Amount</span>

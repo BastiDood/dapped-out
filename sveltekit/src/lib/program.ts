@@ -11,24 +11,10 @@ class Dapped {
     #provider: AnchorProvider;
     /** Anchor program. */
     #program: DappedProgram;
-    /** Program-derived mint account (if any). */
-    #mintAddress: web3.PublicKey;
-    /** Associated token account address of the user. */
-    #userTokenAddress: web3.PublicKey;
 
     constructor(provider: AnchorProvider) {
         this.#provider = provider;
         this.#program = new Program(IDL, PUBLIC_DAPPED_ADDRESS, this.#provider);
-        const walletAddress = this.#provider.publicKey;
-        const [mintAddress, _] = web3.PublicKey.findProgramAddressSync(
-            [utils.bytes.utf8.encode('mint'), walletAddress.toBuffer()],
-            this.#program.programId,
-        );
-        this.#mintAddress = mintAddress;
-        this.#userTokenAddress = utils.token.associatedAddress({
-            mint: this.#mintAddress,
-            owner: walletAddress,
-        });
     }
 
     get walletAddress() {
@@ -39,14 +25,6 @@ class Dapped {
         return this.#program;
     }
 
-    get mintAddress() {
-        return this.#mintAddress;
-    }
-
-    get userTokenAddress() {
-        return this.#userTokenAddress;
-    }
-
     getBalance(target = this.walletAddress) {
         return this.#provider.connection.getBalance(target);
     }
@@ -55,17 +33,19 @@ class Dapped {
         return this.#provider.connection.getTokenAccountBalance(target);
     }
 
-    getUserTokenBalance() {
-        return this.getTokenBalance(this.#userTokenAddress);
-    }
-
     async createMint() {
+        const owner = this.walletAddress;
+        const [mint, _] = web3.PublicKey.findProgramAddressSync(
+            [utils.bytes.utf8.encode('mint'), owner.toBytes()],
+            this.#program.programId,
+        );
+        const token = utils.token.associatedAddress({ mint, owner });
         const tx = await this.#program.methods
             .createMint()
-            .accounts({
-                wallet: this.walletAddress,
-                mint: this.#mintAddress,
-                token: this.#userTokenAddress,
+            .accountsStrict({
+                wallet: owner,
+                mint,
+                token,
                 systemProgram: web3.SystemProgram.programId,
                 tokenProgram: utils.token.TOKEN_PROGRAM_ID,
                 associatedTokenProgram: utils.token.ASSOCIATED_PROGRAM_ID,
@@ -74,23 +54,32 @@ class Dapped {
         console.log('createMint', tx);
     }
 
-    async mintTo(amount: number | bigint, target = this.#userTokenAddress, decimals = 0) {
-        const inst = createMintToCheckedInstruction(this.#mintAddress, target, this.walletAddress, amount, decimals);
+    async mintTo(mint: web3.PublicKey, owner: web3.PublicKey, amount: bigint | number, decimals: number) {
+        const token = utils.token.associatedAddress({ mint, owner });
+        const inst = createMintToCheckedInstruction(mint, token, this.walletAddress, amount, decimals);
         const transaction = new web3.Transaction().add(inst);
         const tx = await this.#provider.sendAndConfirm(transaction, [], { commitment: 'finalized' });
         console.log('mintTo', tx);
     }
 
-    getMint() {
-        return getMint(this.#provider.connection, this.#mintAddress);
+    getMint(mint: web3.PublicKey) {
+        return getMint(this.#provider.connection, mint);
     }
 
     fetchContests() {
         return this.#program.account.contest.all();
     }
 
-    fetchContest(address: web3.PublicKey) {
+    fetchContestByAddress(address: web3.PublicKey) {
         return this.#program.account.contest.fetch(address);
+    }
+
+    fetchContestByAdminAndSlug(admin: web3.PublicKey, slug: string) {
+        const [contest, _] = web3.PublicKey.findProgramAddressSync(
+            [utils.bytes.utf8.encode('contest'), admin.toBytes(), utils.bytes.utf8.encode(slug)],
+            this.#program.programId,
+        );
+        return this.fetchContestByAddress(contest);
     }
 
     fetchArchives() {
@@ -103,52 +92,38 @@ class DappedContest {
     #host: web3.PublicKey;
     #slug: string;
     #programTokenAddress: web3.PublicKey;
-    #contestAddress: web3.PublicKey;
-    #archiveAddress: web3.PublicKey;
 
-    constructor(dapped: Dapped, slug: string, host = dapped.walletAddress) {
+    constructor(dapped: Dapped, host: web3.PublicKey, slug: string) {
         this.#dapped = dapped;
         this.#host = host;
         this.#slug = slug;
         const { programId } = this.#dapped.program;
         const bytes = this.#host.toBytes();
-        const [token, _dst] = web3.PublicKey.findProgramAddressSync(
+        const [token, _] = web3.PublicKey.findProgramAddressSync(
             [utils.bytes.utf8.encode('token'), bytes, utils.bytes.utf8.encode(this.#slug)],
             programId,
         );
         this.#programTokenAddress = token;
-        const [contest, _contest] = web3.PublicKey.findProgramAddressSync(
-            [utils.bytes.utf8.encode('contest'), bytes, utils.bytes.utf8.encode(this.#slug)],
-            programId,
-        );
-        this.#contestAddress = contest;
-        const [archive, _archive] = web3.PublicKey.findProgramAddressSync(
-            [utils.bytes.utf8.encode('archive'), bytes, utils.bytes.utf8.encode(this.#slug)],
-            programId,
-        );
-        this.#archiveAddress = archive;
     }
 
     get dapped() {
         return this.#dapped;
     }
 
-    async createContest(
-        name: string,
-        stake: BN,
-        delay: BN,
-        offset: number,
-        mint = this.#dapped.mintAddress,
-        src = this.#dapped.userTokenAddress,
-    ) {
+    async createContest(name: string, stake: BN, delay: BN, offset: number, mint: web3.PublicKey) {
+        const owner = this.#host;
+        const [contest, _] = web3.PublicKey.findProgramAddressSync(
+            [utils.bytes.utf8.encode('mint'), owner.toBytes(), utils.bytes.utf8.encode(this.#slug)],
+            this.#dapped.program.programId,
+        );
         const tx = await this.#dapped.program.methods
             .createContest(this.#slug, name, stake, delay, offset)
-            .accounts({
-                wallet: this.#dapped.walletAddress,
+            .accountsStrict({
+                wallet: owner,
                 mint,
-                src,
+                src: utils.token.associatedAddress({ mint, owner }),
                 dst: this.#programTokenAddress,
-                contest: this.#contestAddress,
+                contest,
                 systemProgram: web3.SystemProgram.programId,
                 tokenProgram: utils.token.TOKEN_PROGRAM_ID,
             })
@@ -156,21 +131,25 @@ class DappedContest {
         console.log('createContest', tx);
     }
 
-    async joinContest(
-        delay: BN,
-        src = this.#dapped.userTokenAddress,
-        mint = this.#dapped.mintAddress,
-        admin = this.#host,
-    ) {
+    async joinContest(delay: BN, mint: web3.PublicKey) {
+        const admin = this.#host;
+        const [contest, _contest] = web3.PublicKey.findProgramAddressSync(
+            [utils.bytes.utf8.encode('contest'), admin.toBytes(), utils.bytes.utf8.encode(this.#slug)],
+            this.#dapped.program.programId,
+        );
+        const [dst, _dst] = web3.PublicKey.findProgramAddressSync(
+            [utils.bytes.utf8.encode('token'), admin.toBytes(), utils.bytes.utf8.encode(this.#slug)],
+            this.#dapped.program.programId,
+        );
         const tx = await this.#dapped.program.methods
             .joinContest(this.#slug, delay)
-            .accounts({
+            .accountsStrict({
                 wallet: this.#dapped.walletAddress,
                 admin,
                 mint,
-                src,
-                dst: this.#programTokenAddress,
-                contest: this.#contestAddress,
+                src: utils.token.associatedAddress({ mint, owner: this.#dapped.walletAddress }),
+                dst,
+                contest,
                 systemProgram: web3.SystemProgram.programId,
                 tokenProgram: utils.token.TOKEN_PROGRAM_ID,
                 associatedTokenProgram: utils.token.ASSOCIATED_PROGRAM_ID,
@@ -179,15 +158,28 @@ class DappedContest {
         console.log('joinContest', tx);
     }
 
-    async closeContest(tokens: web3.AccountMeta[], mint = this.#dapped.mintAddress) {
+    async closeContest(tokens: web3.AccountMeta[], mint: web3.PublicKey) {
+        const admin = this.#host;
+        const [contest, _contest] = web3.PublicKey.findProgramAddressSync(
+            [utils.bytes.utf8.encode('contest'), admin.toBytes(), utils.bytes.utf8.encode(this.#slug)],
+            this.#dapped.program.programId,
+        );
+        const [archive, _archive] = web3.PublicKey.findProgramAddressSync(
+            [utils.bytes.utf8.encode('archive'), admin.toBytes(), utils.bytes.utf8.encode(this.#slug)],
+            this.#dapped.program.programId,
+        );
+        const [token, _token] = web3.PublicKey.findProgramAddressSync(
+            [utils.bytes.utf8.encode('token'), admin.toBytes(), utils.bytes.utf8.encode(this.#slug)],
+            this.#dapped.program.programId,
+        );
         const tx = await this.#dapped.program.methods
             .closeContest(this.#slug)
-            .accounts({
+            .accountsStrict({
                 wallet: this.#dapped.walletAddress,
                 mint,
-                token: this.#programTokenAddress,
-                contest: this.#contestAddress,
-                archive: this.#archiveAddress,
+                token,
+                contest,
+                archive,
                 systemProgram: web3.SystemProgram.programId,
                 tokenProgram: utils.token.TOKEN_PROGRAM_ID,
             })
@@ -197,7 +189,7 @@ class DappedContest {
     }
 
     fetch() {
-        return this.#dapped.fetchContest(this.#contestAddress);
+        return this.#dapped.fetchContestByAdminAndSlug(this.#host, this.#slug);
     }
 }
 
