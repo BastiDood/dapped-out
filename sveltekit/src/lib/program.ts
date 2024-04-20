@@ -1,6 +1,11 @@
 import { type AnchorProvider, type BN, Program, utils, web3 } from '@coral-xyz/anchor';
 import { type DappedOut, IDL } from '../../../anchor/target/types/dapped_out';
-import { createMintToCheckedInstruction, getMint } from '@solana/spl-token';
+import {
+    createAssociatedTokenAccountIdempotentInstruction,
+    createMintToCheckedInstruction,
+    createTransferCheckedInstruction,
+    getMint,
+} from '@solana/spl-token';
 
 import { PUBLIC_DAPPED_ADDRESS } from '$lib/env';
 
@@ -60,6 +65,50 @@ class Dapped {
         const transaction = new web3.Transaction().add(inst);
         const tx = await this.#provider.sendAndConfirm(transaction, [], { commitment: 'finalized' });
         console.log('mintTo', tx);
+    }
+
+    /** @deprecated {@linkcode transferTokens} */
+    async createAssociatedTokenAccountIdempotent(payer: web3.PublicKey, owner: web3.PublicKey, mint: web3.PublicKey) {
+        const token = utils.token.associatedAddress({ mint, owner });
+        const inst = createAssociatedTokenAccountIdempotentInstruction(payer, token, owner, mint);
+        const transaction = new web3.Transaction().add(inst);
+        const tx = await this.#provider.sendAndConfirm(transaction, [], { commitment: 'finalized' });
+        console.log('createAssociatedTokenAccountIdempotent', tx);
+    }
+
+    /** @deprecated {@linkcode transferTokens} */
+    async transferChecked(
+        mint: web3.PublicKey,
+        owner: web3.PublicKey,
+        target: web3.PublicKey,
+        amount: bigint | number,
+        decimals: number,
+    ) {
+        const src = utils.token.associatedAddress({ mint, owner });
+        const dst = utils.token.associatedAddress({ mint, owner: target });
+        const inst = createTransferCheckedInstruction(src, mint, dst, owner, amount, decimals);
+        const transaction = new web3.Transaction().add(inst);
+        const tx = await this.#provider.sendAndConfirm(transaction, [], { commitment: 'finalized' });
+        console.log('transferChecked', tx);
+    }
+
+    async transferTokens(mint: web3.PublicKey, owner: web3.PublicKey, target: web3.PublicKey, amount: BN) {
+        const src = utils.token.associatedAddress({ mint, owner });
+        const dst = utils.token.associatedAddress({ mint, owner: target });
+        const tx = await this.#program.methods
+            .transferTokens(amount)
+            .accountsStrict({
+                wallet: owner,
+                target,
+                mint,
+                src,
+                dst,
+                systemProgram: web3.SystemProgram.programId,
+                tokenProgram: utils.token.TOKEN_PROGRAM_ID,
+                associatedTokenProgram: utils.token.ASSOCIATED_PROGRAM_ID,
+            })
+            .rpc({ commitment: 'finalized' });
+        console.log('transferTokens', tx);
     }
 
     getMint(mint: web3.PublicKey) {
