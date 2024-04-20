@@ -44,10 +44,10 @@
                     {@const { isInitialized, address, decimals, supply, mintAuthority, freezeAuthority } = mint}
                     {#if isInitialized}
                         <DisplayMint {address} {decimals} {supply} {mintAuthority} {freezeAuthority} />
-                        <hr />
+                        <hr class="!border-t-2" />
                         {#if mintAuthority !== null && program.walletAddress.equals(mintAuthority)}
                             <MintTo mint={address} {program} on:mint={refreshMint} />
-                            <hr />
+                            <hr class="!border-t-2" />
                             <TransferTokens mint={address} {program} on:transfer={refreshMint} />
                         {/if}
                     {:else}
