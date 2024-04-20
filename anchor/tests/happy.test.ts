@@ -36,7 +36,7 @@ describe('dapped-out', () => {
     it('should create a new mint account', async () => {
         await program.methods
             .createMint()
-            .accounts({
+            .accountsStrict({
                 wallet: provider.publicKey,
                 mint: mintAddress,
                 token: selfTokenAccountAddress,
@@ -59,7 +59,7 @@ describe('dapped-out', () => {
     it('should create a new contest', async () => {
         await program.methods
             .createContest('test', 'Test', new BN(10), new BN(200), 20)
-            .accounts({
+            .accountsStrict({
                 wallet: provider.publicKey,
                 mint: mintAddress,
                 src: selfTokenAccountAddress,
@@ -138,7 +138,7 @@ describe('dapped-out', () => {
     it('should join an existing contest with perfect accuracy', async () => {
         await program.methods
             .joinContest('test', new BN(200))
-            .accounts({
+            .accountsStrict({
                 wallet: other.publicKey,
                 admin: provider.publicKey,
                 mint: mintAddress,
@@ -188,7 +188,7 @@ describe('dapped-out', () => {
     it('should close an existing contest', async () => {
         await program.methods
             .closeContest('test')
-            .accounts({
+            .accountsStrict({
                 wallet: provider.publicKey,
                 mint: mintAddress,
                 token: programTokenAccountAddress,
@@ -213,5 +213,27 @@ describe('dapped-out', () => {
         const otherBalance = await provider.connection.getTokenAccountBalance(otherTokenAccountAddress);
         expect(otherBalance.value.decimals).eq(0);
         expect(otherBalance.value.uiAmount).eq(5010);
+    });
+
+    it('should transfer tokens', async () => {
+        await program.methods
+            .transferTokens(new BN(90))
+            .accountsStrict({
+                wallet: provider.publicKey,
+                target: other.publicKey,
+                mint: mintAddress,
+                src: selfTokenAccountAddress,
+                dst: otherTokenAccountAddress,
+                systemProgram: web3.SystemProgram.programId,
+                tokenProgram: utils.token.TOKEN_PROGRAM_ID,
+                associatedTokenProgram: utils.token.ASSOCIATED_PROGRAM_ID,
+            })
+            .rpc();
+        const selfBalance = await provider.connection.getTokenAccountBalance(selfTokenAccountAddress);
+        expect(selfBalance.value.decimals).eq(0);
+        expect(selfBalance.value.uiAmount).eq(9900);
+        const otherBalance = await provider.connection.getTokenAccountBalance(otherTokenAccountAddress);
+        expect(otherBalance.value.decimals).eq(0);
+        expect(otherBalance.value.uiAmount).eq(5100);
     });
 });
