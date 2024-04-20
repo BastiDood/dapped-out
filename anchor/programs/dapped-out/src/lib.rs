@@ -16,6 +16,19 @@ mod dapped_out {
         Ok(())
     }
 
+    pub fn transfer_tokens(ctx: Context<TransferTokens>, amount: u64) -> Result<()> {
+        use anchor_spl::token::{transfer_checked, TransferChecked};
+        let Context { accounts: TransferTokens { mint, wallet, src, dst, token_program, .. }, .. } = ctx;
+        let args = TransferChecked {
+            mint: mint.to_account_info(),
+            authority: wallet.to_account_info(),
+            from: src.to_account_info(),
+            to: dst.to_account_info(),
+        };
+        let cpi = CpiContext::new(token_program.to_account_info(), args);
+        transfer_checked(cpi, amount, mint.decimals)
+    }
+
     pub fn create_contest(
         ctx: Context<CreateContest>,
         slug: String,
