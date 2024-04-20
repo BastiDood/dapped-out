@@ -162,7 +162,7 @@ class DappedContest {
     async createContest(name: string, stake: BN, delay: BN, offset: number, mint: web3.PublicKey) {
         const owner = this.#host;
         const [contest, _] = web3.PublicKey.findProgramAddressSync(
-            [utils.bytes.utf8.encode('mint'), owner.toBytes(), utils.bytes.utf8.encode(this.#slug)],
+            [utils.bytes.utf8.encode('contest'), owner.toBytes(), utils.bytes.utf8.encode(this.#slug)],
             this.#dapped.program.programId,
         );
         const tx = await this.#dapped.program.methods
