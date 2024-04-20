@@ -6,7 +6,7 @@ import type { DappedOut } from '../target/types/dapped_out';
 describe('dapped-out', () => {
     const provider = AnchorProvider.env();
     const program: Program<DappedOut> = workspace.DappedOut;
-    const seeds = [provider.publicKey.toBuffer(), utils.bytes.utf8.encode('test')];
+    const seeds = [provider.publicKey.toBytes(), utils.bytes.utf8.encode('test')];
 
     const [contestAddress, _contestBump] = web3.PublicKey.findProgramAddressSync(
         [utils.bytes.utf8.encode('contest'), ...seeds],
@@ -24,7 +24,7 @@ describe('dapped-out', () => {
     );
 
     const [mintAddress, _mintBump] = web3.PublicKey.findProgramAddressSync(
-        [utils.bytes.utf8.encode('mint'), provider.publicKey.toBuffer()],
+        [utils.bytes.utf8.encode('mint'), provider.publicKey.toBytes()],
         program.programId,
     );
 
