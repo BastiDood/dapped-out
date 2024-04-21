@@ -23,6 +23,7 @@
         "@solana/spl-token": "^0.4.6",
         "@solana/wallet-adapter-base": "^0.9.23",
         "@steeze-ui/heroicons": "^2.3.0",
+        "@steeze-ui/octicons": "^2.1.1",
         "@steeze-ui/svelte-icon": "^1.5.0",
         "@sveltejs/adapter-static": "^3.0.1",
         "@sveltejs/kit": "^2.5.7",
