@@ -68,8 +68,11 @@
     {#key refresh}
         {#await program.fetch()}
             <ProgressBar />
-        {:then { host, mint, name, participants }}
+        {:then { host, mint, stake, name, participants }}
+            {@const selfToken = utils.token.associatedAddress({ mint, owner: program.dapped.walletAddress })}
             <h1 class="h1">{name}</h1>
+            <p>Hosted by <code class="code">{host}</code>.</p>
+            <p>This contest requires <code class="code">{stake}</code> staked tokens per attempt. With {participants.length} participants, the total pot is <code class="code">{stake.muln(participants.length)}</code>.</p>
             {#if program.dapped.walletAddress.equals(host)}
                 {@const metas = participants.map(({ token }) => ({ pubkey: token, isSigner: false, isWritable: true }))}
                 <ParticipantVisualizer id="delay" name="delay" max={2000} targets={participants}
@@ -83,18 +86,28 @@
                     <Icon src={XCircle} theme="mini" class="size-6" />
                     <span>Close Contest</span>
                 </button>
+            {:else if participants.some(({ token }) => selfToken.equals(token))}
+                <WarningAlert>You are already a participant of this contest.</WarningAlert>
+                <ParticipantVisualizer id="delay" name="delay" max={2000} targets={participants}
+                    >Participants</ParticipantVisualizer
+                >
             {:else}
-                {@const selfToken = utils.token.associatedAddress({ mint, owner: program.dapped.walletAddress })}
-                {#if participants.some(({ token }) => selfToken.equals(token))}
-                    <WarningAlert>You are already a participant of this contest.</WarningAlert>
-                {:else}
-                    <form
-                        on:submit|self|preventDefault|stopPropagation={({ currentTarget, submitter }) =>
-                            submit(currentTarget, submitter, mint)}
-                    >
-                        <DelayMeter id="delay" name="delay" max={2000} targets={participants}>Participants</DelayMeter>
-                    </form>
-                {/if}
+                {#await program.dapped.getTokenBalance(selfToken)}
+                    <ProgressBar />
+                {:then { value: { amount, decimals } }}
+                    {@const value = new BN(amount).muln(10 ** decimals)}
+                    <p>
+                        You have <code class="code">{value}</code> tokens of the mint <code class="code">{mint}</code> remaining.
+                    </p>
+                {:catch err}
+                    <ErrorAlert>{err}</ErrorAlert>
+                {/await}
+                <form
+                    on:submit|self|preventDefault|stopPropagation={({ currentTarget, submitter }) =>
+                        submit(currentTarget, submitter, mint)}
+                >
+                    <DelayMeter id="delay" name="delay" max={2000} targets={participants}>Participants</DelayMeter>
+                </form>
             {/if}
         {:catch err}
             <ErrorAlert>{err}</ErrorAlert>
