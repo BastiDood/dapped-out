@@ -1,11 +1,11 @@
 <script lang="ts">
     import { Banknotes, CircleStack, Clock, User } from '@steeze-ui/heroicons';
+    import { BN } from 'bn.js';
     import type { Dapped } from '$lib/program';
     import ErrorAlert from '$lib/alerts/Error.svelte';
     import { Icon } from '@steeze-ui/svelte-icon';
     import { ProgressBar } from '@skeletonlabs/skeleton';
     import WarningAlert from '$lib/alerts/Warning.svelte';
-    import { BN } from 'bn.js';
     // eslint-disable-next-line init-declarations
     export let program: Dapped;
 </script>

@@ -10,8 +10,6 @@ import { PUBLIC_SOLANA_RPC } from '$lib/env';
 const WALLET = Symbol('wallet');
 
 export const enum Status {
-    /** Default state while confirming the wallet. */
-    None,
     /** Idle, reject, or disconnected wallet. */
     Idle,
     /** No Solana wallets available. */
@@ -31,7 +29,7 @@ function getPhantom() {
         if (typeof phantom === 'undefined') return Status.Unavailable;
         return phantom.isPhantom === true ? phantom : Status.Unsupported;
     }
-    return Status.None;
+    return Status.Idle;
 }
 
 function create() {
@@ -50,7 +48,7 @@ function create() {
     const signAllTransactions = phantom.signAllTransactions.bind(phantom);
 
     const CONNECTION = new web3.Connection(PUBLIC_SOLANA_RPC);
-    const { subscribe } = readable(Status.None as Dapped | Status, set => {
+    const { subscribe } = readable(Status.Idle as Dapped | Status, set => {
         // eslint-disable-next-line func-style
         const onConnect = () => {
             const bytes = phantom.publicKey?.toBytes();
