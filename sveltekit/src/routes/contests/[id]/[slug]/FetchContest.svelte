@@ -69,7 +69,6 @@
         {#await program.fetch()}
             <ProgressBar />
         {:then { host, mint, name, participants }}
-            {@const hostToken = utils.token.associatedAddress({ mint, owner: host })}
             <h1 class="h1">{name}</h1>
             {#if program.dapped.walletAddress.equals(host)}
                 {@const metas = participants.map(({ token }) => ({ pubkey: token, isSigner: false, isWritable: true }))}
@@ -84,15 +83,18 @@
                     <Icon src={XCircle} theme="mini" class="size-6" />
                     <span>Close Contest</span>
                 </button>
-            {:else if participants.some(({ token }) => hostToken.equals(token))}
-                <WarningAlert>You are already a participant of this contest.</WarningAlert>
             {:else}
-                <form
-                    on:submit|self|preventDefault|stopPropagation={({ currentTarget, submitter }) =>
-                        submit(currentTarget, submitter, mint)}
-                >
-                    <DelayMeter id="delay" name="delay" max={2000} targets={participants}>Participants</DelayMeter>
-                </form>
+                {@const selfToken = utils.token.associatedAddress({ mint, owner: program.dapped.walletAddress })}
+                {#if participants.some(({ token }) => selfToken.equals(token))}
+                    <WarningAlert>You are already a participant of this contest.</WarningAlert>
+                {:else}
+                    <form
+                        on:submit|self|preventDefault|stopPropagation={({ currentTarget, submitter }) =>
+                            submit(currentTarget, submitter, mint)}
+                    >
+                        <DelayMeter id="delay" name="delay" max={2000} targets={participants}>Participants</DelayMeter>
+                    </form>
+                {/if}
             {/if}
         {:catch err}
             <ErrorAlert>{err}</ErrorAlert>
