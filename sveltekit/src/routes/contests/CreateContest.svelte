@@ -59,9 +59,8 @@
     on:submit|self|preventDefault|stopPropagation={({ currentTarget, submitter }) => submit(currentTarget, submitter)}
     class="space-y-4"
 >
-    <DelayMeter name="delay" max={2000}>Delay</DelayMeter>
     <label class="label">
-        <span>Slug</span>
+        <span>A unique URL slug for this contest.</span>
         <input
             required
             type="text"
@@ -73,20 +72,23 @@
         />
     </label>
     <label class="label">
-        <span>Name</span>
+        <span>A human-readable name for your contest.</span>
         <input required type="text" maxlength="16" name="name" placeholder="Name" class="input px-4 py-2" />
     </label>
     <label class="label">
-        <span>Mint</span>
+        <span>The address of the mint being staked.</span>
         <input required type="text" name="mint" placeholder="Mint" class="input px-4 py-2 font-mono" />
     </label>
     <label class="label">
-        <span>Stake</span>
+        <span>Fixed amount of tokens required to join the contest.</span>
         <input required type="number" min="1" name="stake" placeholder="Stake" class="input px-4 py-2" />
     </label>
+    <DelayMeter name="delay" max={2000}
+        >The target timing of the contest. Press the clock to start. Press again to stop.</DelayMeter
+    >
     <label class="label">
-        <span>Difficulty</span>
-        <input required type="number" min="1" name="offset" placeholder="Offset" class="input px-4 py-2" />
+        <span>The contest difficulty measured as the allowed leeway (in milliseconds) around the target timing.</span>
+        <input required type="number" min="1" name="offset" placeholder="Difficulty" class="input px-4 py-2" />
     </label>
     <button type="submit" class="variant-filled-success btn w-full">
         <Icon src={PlusCircle} theme="mini" class="size-8" />
