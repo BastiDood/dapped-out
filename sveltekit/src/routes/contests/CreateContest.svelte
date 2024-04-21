@@ -85,7 +85,7 @@
         <input required type="number" min="1" name="stake" placeholder="Stake" class="input px-4 py-2" />
     </label>
     <label class="label">
-        <span>Offset</span>
+        <span>Difficulty</span>
         <input required type="number" min="1" name="offset" placeholder="Offset" class="input px-4 py-2" />
     </label>
     <button type="submit" class="variant-filled-success btn w-full">

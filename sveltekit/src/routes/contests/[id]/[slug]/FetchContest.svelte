@@ -68,11 +68,17 @@
     {#key refresh}
         {#await program.fetch()}
             <ProgressBar />
-        {:then { host, mint, stake, name, participants }}
+        {:then { host, mint, stake, name, offset, participants }}
             {@const selfToken = utils.token.associatedAddress({ mint, owner: program.dapped.walletAddress })}
             <h1 class="h1">{name}</h1>
             <p>Hosted by <code class="code">{host}</code>.</p>
-            <p>This contest requires <code class="code">{stake}</code> staked tokens per attempt. With {participants.length} participants, the total pot is <code class="code">{stake.muln(participants.length)}</code>.</p>
+            <p>
+                This contest requires <code class="code">{stake}</code> staked tokens per attempt. With {participants.length}
+                participants, the total pot is <code class="code">{stake.muln(participants.length)}</code>.
+            </p>
+            <p>
+                To score the most points, time the meter within <code class="code">{offset}</code> milliseconds of the mean.
+            </p>
             {#if program.dapped.walletAddress.equals(host)}
                 {@const metas = participants.map(({ token }) => ({ pubkey: token, isSigner: false, isWritable: true }))}
                 <ParticipantVisualizer id="delay" name="delay" max={2000} targets={participants}
