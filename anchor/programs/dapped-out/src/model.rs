@@ -14,7 +14,7 @@ impl Prefixable for TokenAccount {
 }
 
 #[derive(AnchorDeserialize, AnchorSerialize, Clone, InitSpace)]
-pub struct Participant {
+pub struct LiveParticipant {
     pub token: Pubkey,
     pub delay: i64,
 }
@@ -31,7 +31,7 @@ pub struct Contest {
     pub mint: Pubkey,
     /// List of participants. The first one is always the authority.
     #[max_len(8)]
-    pub participants: Vec<Participant>,
+    pub participants: Vec<LiveParticipant>,
     /// Human-readable contest name.
     #[max_len(16)]
     pub name: String,
@@ -49,6 +49,13 @@ impl Prefixable for Contest {
     const PREFIX: &'static [u8] = b"contest";
 }
 
+#[derive(AnchorDeserialize, AnchorSerialize, Clone, InitSpace)]
+pub struct DoneParticipant {
+    pub token: Pubkey,
+    pub delay: i64,
+    pub reward: u64,
+}
+
 #[account]
 #[derive(InitSpace)]
 pub struct Archive {
@@ -57,9 +64,17 @@ pub struct Archive {
     pub slug: String,
     /// The configured token to be exchanged in this casino.
     pub mint: Pubkey,
+    /// Token address of the contest host.
+    pub token: Pubkey,
+    /// The "entrance fee" of the contest.
+    pub stake: u64,
+    /// The host-assigned delay.
+    pub delay: i64,
+    /// The "expected reaction time" estimated as an offset from the first participant's delay.
+    pub offset: f64,
     /// List of participants. The first one is always the authority.
     #[max_len(8)]
-    pub participants: Vec<Participant>,
+    pub winnings: Vec<DoneParticipant>,
     /// Human-readable contest name.
     #[max_len(16)]
     pub name: String,

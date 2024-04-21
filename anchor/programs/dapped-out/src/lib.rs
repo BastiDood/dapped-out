@@ -51,7 +51,7 @@ mod dapped_out {
 
         // Ensure that the first participant is always the creator
         contest.participants.clear();
-        contest.participants.push(Participant { token: src.key(), delay });
+        contest.participants.push(LiveParticipant { token: src.key(), delay });
 
         // Transfer the stake to the contest token account
         use anchor_spl::token::{transfer_checked, TransferChecked};
@@ -69,7 +69,7 @@ mod dapped_out {
         let Context { accounts: JoinContest { wallet, mint, contest, src, dst, token_program, .. }, .. } = ctx;
 
         // Add a new participant to the contest
-        contest.participants.push(Participant { token: src.key(), delay });
+        contest.participants.push(LiveParticipant { token: src.key(), delay });
 
         // Transfer the stake to the contest token account
         use anchor_spl::token::{transfer_checked, TransferChecked};
@@ -108,34 +108,37 @@ mod dapped_out {
 
         let wald = wald::Wald::new(mode.into(), contest.offset);
         let contestants: Vec<_> = iter
-            .map(|(&Participant { token, delay }, account)| {
+            .map(|(&LiveParticipant { token, delay }, account)| {
                 require_keys_eq!(token, account.key(), CloseError::AccountMismatch);
-                let Ok(delay) = u32::try_from(delay) else {
+                let Ok(int_delay) = u32::try_from(delay) else {
                     return Err(CloseError::TooLarge.into());
                 };
-                Ok((account, wald.sample(delay.into())))
+                Ok((account, delay, wald.sample(int_delay.into())))
             })
             .collect::<Result<_>>()?;
 
         // Normalize the weights of the contests
-        let total = contestants.iter().map(|&(_, wald)| wald).sum::<f64>();
-        for (account, sample) in contestants {
-            // Check if the reward can be casted to an integer
-            let reward = sample / total * f64::from(pot);
-            require!(reward.is_finite(), CloseError::BadTransfer);
-            require_gt!(reward, 0., CloseError::BadTransfer);
-            require!(reward <= f64::from(u32::MAX), CloseError::BadTransfer);
-            let reward = unsafe { reward.to_int_unchecked() };
-
-            let args = TransferChecked {
-                mint: mint.to_account_info(),
-                authority: wallet.to_account_info(),
-                from: token.to_account_info(),
-                to: account.clone(),
-            };
-            let cpi = CpiContext::new(token_program.to_account_info(), args);
-            transfer_checked(cpi, reward, mint.decimals)?;
-        }
+        let total = contestants.iter().map(|&(_, _, wald)| wald).sum::<f64>();
+        let winnings: Vec<_> = contestants
+            .into_iter()
+            .map(|(account, delay, sample)| {
+                // Check if the reward can be casted to an integer
+                let reward = sample / total * f64::from(pot);
+                require!(reward.is_finite(), CloseError::BadTransfer);
+                require_gt!(reward, 0., CloseError::BadTransfer);
+                require!(reward <= f64::from(u32::MAX), CloseError::BadTransfer);
+                let reward = unsafe { reward.to_int_unchecked() };
+                let args = TransferChecked {
+                    mint: mint.to_account_info(),
+                    authority: wallet.to_account_info(),
+                    from: token.to_account_info(),
+                    to: account.clone(),
+                };
+                let cpi = CpiContext::new(token_program.to_account_info(), args);
+                transfer_checked(cpi, reward, mint.decimals)?;
+                Ok(DoneParticipant { token: account.key(), delay, reward })
+            })
+            .collect::<Result<_>>()?;
 
         // Move the residual to the host
         token.reload()?;
@@ -159,11 +162,15 @@ mod dapped_out {
 
         // Move the contest to the archive
         use core::mem::take;
-        archive.slug = take(&mut contest.slug);
         archive.mint = contest.mint.key();
-        archive.participants = take(&mut contest.participants);
-        archive.name = take(&mut contest.name);
+        archive.token = host_participant.token;
+        archive.stake = contest.stake;
+        archive.delay = host_participant.delay;
+        archive.offset = contest.offset;
         archive.bump = bumps.archive;
+        archive.winnings = winnings;
+        archive.slug = take(&mut contest.slug);
+        archive.name = take(&mut contest.name);
 
         Ok(())
     }
