@@ -6,7 +6,7 @@ use anchor_lang::prelude::*;
 use inst::*;
 use model::*;
 
-declare_id!("GQKYmPzoZuj2LHDATr8LSBrrncT2pXDMjyaoP8AaP3XJ");
+declare_id!("2TVgogfbEyyFpFwCiyyiWZCjMvrCvcNocNvN79askGtt");
 
 #[program]
 mod dapped_out {
