@@ -3,11 +3,15 @@
     import { Icon } from '@steeze-ui/svelte-icon';
     import { Link } from '@steeze-ui/heroicons';
     import { MarkGithub } from '@steeze-ui/octicons';
+    import { getStatus } from '$lib/wallet';
+    const ready = getStatus();
 </script>
 
 <article class="prose max-w-none dark:prose-invert">
     <h1>Dapped Out!</h1>
-    <ConnectWalletButton />
+    {#if !$ready}
+        <ConnectWalletButton />
+    {/if}
     <a href="https://github.com/BastiDood/dapped-out" target="_blank" class="variant-filled-primary btn">
         <Icon src={MarkGithub} theme="mini" class="size-6" />
         <span>BastiDood/dapped-out</span>

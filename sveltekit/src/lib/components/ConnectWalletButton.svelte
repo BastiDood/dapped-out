@@ -1,10 +1,10 @@
 <script>
     import { Icon } from '@steeze-ui/svelte-icon';
     import { Wallet } from '@steeze-ui/heroicons';
-    import { get } from '$lib/wallet';
     import { getToastStore } from '@skeletonlabs/skeleton';
+    import { getWallet } from '$lib/wallet';
 
-    const anchor = get();
+    const anchor = getWallet();
     const toast = getToastStore();
 
     /** @param {HTMLButtonElement} button */

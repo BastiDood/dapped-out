@@ -1,7 +1,7 @@
 <script>
     import './app.css';
     import { AppShell, Toast, initializeStores, setInitialClassState } from '@skeletonlabs/skeleton';
-    import { get, init } from '$lib/wallet';
+    import { getWallet, init } from '$lib/wallet';
     import SideBar from './SideBar.svelte';
     import { browser } from '$app/environment';
     import logo from '$lib/icons/icons-32.png';
@@ -13,7 +13,7 @@
     // HACK: Workaround for Skeleton not setting the dark mode for SPAs.
     if (browser) setInitialClassState();
 
-    const anchor = get();
+    const anchor = getWallet();
     onMount(async () => {
         try {
             await anchor.connect(true);

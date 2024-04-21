@@ -1,10 +1,10 @@
 <script lang="ts">
-    import { Status, get } from '$lib/wallet';
+    import { Status, getWallet } from '$lib/wallet';
     import ConnectWalletButton from '$lib/components/ConnectWalletButton.svelte';
     import ErrorAlert from '$lib/alerts/Error.svelte';
     import ListContests from './ListContests.svelte';
     import WarningAlert from '$lib/alerts/Warning.svelte';
-    const anchor = get();
+    const anchor = getWallet();
 </script>
 
 <div class="space-y-4">

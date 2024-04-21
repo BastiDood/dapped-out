@@ -1,13 +1,10 @@
 <script>
     import { AppRail, AppRailAnchor, LightSwitch } from '@skeletonlabs/skeleton';
     import { ArchiveBox, Banknotes, Home, Trophy } from '@steeze-ui/heroicons';
-    import { Dapped } from '$lib/program';
     import { Icon } from '@steeze-ui/svelte-icon';
-    import { get } from '$lib/wallet';
+    import { getStatus } from '$lib/wallet';
     import { page } from '$app/stores';
-
-    const wallet = get();
-    $: show = $wallet instanceof Dapped;
+    const ready = getStatus();
     $: ({ pathname } = $page.url);
 </script>
 
@@ -19,7 +16,7 @@
         <Icon src={Home} slot="lead" class="size-8" />
         <span>Home</span>
     </AppRailAnchor>
-    {#if show}
+    {#if $ready}
         <AppRailAnchor href="/mint/" selected={pathname.startsWith('/mint/')}>
             <Icon src={Banknotes} slot="lead" class="size-8" />
             <span>Mint</span>

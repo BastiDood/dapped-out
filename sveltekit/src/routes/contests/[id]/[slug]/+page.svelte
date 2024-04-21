@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Status, get } from '$lib/wallet';
+    import { Status, getWallet } from '$lib/wallet';
     import ConnectWalletButton from '$lib/components/ConnectWalletButton.svelte';
     import { DappedContest } from '$lib/program';
     import ErrorAlert from '$lib/alerts/Error.svelte';
@@ -12,7 +12,7 @@
     $: ({ id, slug } = data);
     $: host = new web3.PublicKey(id);
 
-    const anchor = get();
+    const anchor = getWallet();
 </script>
 
 {#if $anchor === Status.Idle}

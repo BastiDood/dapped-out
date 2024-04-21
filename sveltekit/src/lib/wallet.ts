@@ -1,13 +1,14 @@
 import { AnchorProvider, web3 } from '@coral-xyz/anchor';
+import { derived, readable } from 'svelte/store';
 import { getContext, hasContext, setContext } from 'svelte';
 import { Dapped } from '$lib/program';
 import { assert } from '$lib/assert';
 import { browser } from '$app/environment';
-import { readable } from 'svelte/store';
 
 import { PUBLIC_SOLANA_RPC } from '$lib/env';
 
 const WALLET = Symbol('wallet');
+const STATUS = Symbol('wallet:status');
 
 export const enum Status {
     /** Idle, reject, or disconnected wallet. */
@@ -32,7 +33,7 @@ function getPhantom() {
     return Status.Idle;
 }
 
-function create() {
+function createMainStore() {
     const phantom = getPhantom();
     if (typeof phantom === 'number') {
         const { subscribe } = readable(phantom);
@@ -90,13 +91,26 @@ function create() {
     };
 }
 
-type Store = ReturnType<typeof create>;
+type Store = ReturnType<typeof createMainStore>;
 
-export function init() {
-    setContext(WALLET, create());
+function createDerivedStore(store: Store) {
+    return derived(store, val => val instanceof Dapped, false);
 }
 
-export function get() {
+type Derived = ReturnType<typeof createDerivedStore>;
+
+export function init() {
+    const store = createMainStore();
+    setContext(WALLET, store);
+    setContext(STATUS, createDerivedStore(store));
+}
+
+export function getWallet() {
     assert(hasContext(WALLET), 'wallet not initialized');
     return getContext<Store>(WALLET);
+}
+
+export function getStatus() {
+    assert(hasContext(STATUS), 'wallet not initialized');
+    return getContext<Derived>(STATUS);
 }
