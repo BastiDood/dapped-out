@@ -1,5 +1,6 @@
 <script>
     import { Icon } from '@steeze-ui/svelte-icon';
+    import { Link } from '@steeze-ui/heroicons';
     import { MarkGithub } from '@steeze-ui/octicons';
 </script>
 
@@ -8,6 +9,10 @@
     <a href="https://github.com/BastiDood/dapped-out" target="_blank" class="variant-filled-primary btn">
         <Icon src={MarkGithub} theme="mini" class="size-6" />
         <span>BastiDood/dapped-out</span>
+    </a>
+    <a href="https://dapped-out.pages.dev" target="_blank" class="variant-filled-primary btn">
+        <Icon src={Link} theme="mini" class="size-6" />
+        <span>dapped-out.pages.dev</span>
     </a>
     <p>
         <em>Dapped Out!</em> is a timing-based casino game for the Solana blockchain, implemented as an installable
